@@ -13,7 +13,7 @@ export async function loader({ params }) {
   const contact = await getContact(params.contactId);
 
   if (contact) {
-    document.title = `${contact.first} ${contact.last}`;
+    document.title = `${window.documentTitle}: ${contact.first} ${contact.last}`;
     return { contact };
   }
 

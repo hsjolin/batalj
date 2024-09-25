@@ -11,28 +11,46 @@ import {
 import { useEffect } from "react";
 
 import {
-    getContacts,
-    createContact
+    getEvents,
+    createEvent
+} from "../competition";
+
+import {
+    createContact,
+    getContacts
 } from "../contacts";
 
-export async function loader({ request }) {
+export async function loader({ request, params }) {
     const url = new URL(request.url);
     const q = url.searchParams.get("q");
-    const contacts = await getContacts(q);
-
-    return { contacts, q };
+    const events = await getEvents(q, params.competitionId);
+    const contacts = await getContacts();
+    return { events, contacts, q };
 }
 
-export async function action() {
-    const contact = await createContact();
-    return redirect(`/contacts/${contact.id}/edit`);
+export async function action(q) {
+    const request = q.request;
+    const params = q.params;
+
+    console.log(q);
+
+    const formData = await request.formData();
+    const intent = formData.get("intent");
+    switch (intent) {
+        case "create-contact":
+            const contact = await createContact(params.competitionId);
+            return redirect(`contacts/${contact.id}/edit`);
+        case "create-event":
+            const event = await createEvent(params.competitionId);
+            return redirect(`events/${event.id}/edit`);
+    }
 }
 
-export default function Root() {
-    const { contacts, q } = useLoaderData();
+export default function Competition() {
+    const { events, q, contacts } = useLoaderData();
     const navigation = useNavigation();
     const submit = useSubmit();
-    const searching = navigation.location 
+    const searching = navigation.location
         && new URLSearchParams(navigation.location.search).has("q");
 
     useEffect(() => {
@@ -42,12 +60,11 @@ export default function Root() {
     return (
         <>
             <div id="sidebar">
-                <h1>React Router Contacts</h1>
                 <div>
                     <Form id="search-form" role="search">
                         <input
                             id="q"
-                            className={searching 
+                            className={searching
                                 ? "loading"
                                 : ""}
                             aria-label="Search contacts"
@@ -74,6 +91,37 @@ export default function Root() {
                     </Form>
                 </div>
                 <nav>
+                    {events.length ? (
+                        <ul>
+                            {events.map(event => (
+                                <li key={event.id}>
+                                    <NavLink
+                                        to={`events/${event.id}`}
+                                        className={({ isActive, isPending }) =>
+                                            isActive
+                                                ? "active"
+                                                : isPending
+                                                    ? "pending"
+                                                    : ""}>
+                                        {event.name
+                                            ? <>{event.name}</>
+                                            : <i>Aktivitet utan namn</i>}{" "}
+                                    </NavLink>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>
+                            <i>Inga event 🤷‍♂️</i>
+                        </p>
+                    )}
+                </nav>
+                <div>
+                    <Form method="post">
+                        <button type="submit" name="intent" value="create-event">Nytt event</button>
+                    </Form>
+                </div>
+                <nav>
                     {contacts.length ? (
                         <ul>
                             {contacts.map(contact => (
@@ -92,21 +140,20 @@ export default function Root() {
                                                 ? <>{contact.first}</>
                                                 : contact.last
                                                     ? <>{contact.last}</>
-                                                    : <i>No name</i>}{" "}
-                                        {contact.favorite && <span>★</span>}
+                                                    : <i>Kontakt utan namn</i>}{" "}
                                     </NavLink>
                                 </li>
                             ))}
                         </ul>
                     ) : (
                         <p>
-                            <i>No contacts found</i>
+                            <i>Inga kontakter 🤷‍♂️</i>
                         </p>
                     )}
                 </nav>
                 <div>
                     <Form method="post">
-                        <button type="submit">Ny användare</button>
+                        <button type="submit" name="intent" value="create-contact">Ny kontakt</button>
                     </Form>
                 </div>
             </div>
