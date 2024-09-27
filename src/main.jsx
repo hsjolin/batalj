@@ -80,8 +80,13 @@ const router = createBrowserRouter([
           {
             path: "contacts/:contactId/destroy",
             action: deleteAction
-          }
-        ]
+          },
+          {
+            path: "competitions/:competitionId/edit",
+            element: <CompetitionEdit />,
+            loader: editCompetitionLoader,
+            action: editCompetitionAction
+          },        ]
       },
       {
         path: "/:groupId/competitions/:competitionId",
@@ -106,12 +111,6 @@ const router = createBrowserRouter([
             action: deleteEventAction
           }
         ]
-      },
-      {
-        path: "/:groupId/competitions/:competitionId/edit",
-        element: <CompetitionEdit />,
-        loader: editCompetitionLoader,
-        action: editCompetitionAction
       },
     ]
   }
