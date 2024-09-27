@@ -7,7 +7,7 @@ import {
 import {
   getContact,
   updateContact
-} from "../contacts";
+} from "../api";
 
 export async function loader({ params }) {
   const contact = await getContact(params.contactId);

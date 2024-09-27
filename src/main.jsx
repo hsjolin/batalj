@@ -5,6 +5,18 @@ import Competition, {
   loader as competitionLoader,
   action as competitionAction
 } from "./routes/competition";
+import CompetitionEdit, {
+  loader as editCompetitionLoader,
+  action as editCompetitionAction
+} from "./routes/edit-competition";
+import Root, {
+  loader as rootLoader,
+  action as rootAction
+} from "./routes/root";
+import Group, {
+  loader as groupLoader,
+  action as groupAction
+} from "./routes/group";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -30,40 +42,29 @@ import {
   action as deleteEventAction
 } from "./routes/destroy-event"
 
-import Index from "./routes/index";
 import ErrorPage from "./error-page";
 
 const router = createBrowserRouter([
   {
-    path: "/:competitionId",
-    element: <Competition />,
+    path: "/",
+    element: <Root />,
     errorElement: <ErrorPage />,
-    loader: competitionLoader,
-    action: competitionAction,
+    action: rootAction,
+    loader: rootLoader
+  },
+  {
+    errorElement: <ErrorPage />,
     children: [
+      // {
+      //   index: true,
+      //   element: <Index />
+      // },
       {
-        errorElement: <ErrorPage />,
+        path: "/:groupId",
+        element: <Group />,
+        loader: groupLoader,
+        action: groupAction,
         children: [
-          {
-            index: true,
-            element: <Index />
-          },
-          {
-            path: "events/:eventId",
-            element: <Event />,
-            action: eventAction,
-            loader: eventLoader
-          },
-          {
-            path: "events/:eventId/edit",
-            element: <EditEvent />,
-            action: editEventAction,
-            loader: eventLoader
-          },
-          {
-            path: "events/:eventId/destroy",
-            action: deleteEventAction
-          },
           {
             path: "contacts/:contactId",
             element: <Contact />,
@@ -81,7 +82,37 @@ const router = createBrowserRouter([
             action: deleteAction
           }
         ]
-      }
+      },
+      {
+        path: "/:groupId/competitions/:competitionId",
+        element: <Competition />,
+        loader: competitionLoader,
+        action: competitionAction,
+        children: [
+          {
+            path: "events/:eventId",
+            element: <Event />,
+            action: eventAction,
+            loader: eventLoader
+          },
+          {
+            path: "events/:eventId/edit",
+            element: <EditEvent />,
+            action: editEventAction,
+            loader: eventLoader
+          },
+          {
+            path: "events/:eventId/destroy",
+            action: deleteEventAction
+          }
+        ]
+      },
+      {
+        path: "/:groupId/competitions/:competitionId/edit",
+        element: <CompetitionEdit />,
+        loader: editCompetitionLoader,
+        action: editCompetitionAction
+      },
     ]
   }
 ]);

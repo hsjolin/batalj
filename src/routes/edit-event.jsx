@@ -4,14 +4,14 @@ import {
     redirect,
     useNavigate
 } from "react-router-dom";
-import { updateEvent } from "../competition";
+import { updateEvent } from "../api";
 
 export async function action({ request, params }) {
     const formData = await request.formData();
     const updates = Object.fromEntries(formData);
     await updateEvent(params.eventId, updates);
 
-    return redirect(`/events/${params.eventId}`);
+    return redirect(`/${params.groupId}/competitions/${params.competitionId}/events/${params.eventId}`);
 }
 
 export default function EditEvent() {

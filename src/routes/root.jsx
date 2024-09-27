@@ -1,119 +1,67 @@
 import {
-    Outlet,
-    Form,
-    NavLink,
     redirect,
+    Form,
     useLoaderData,
-    useNavigation,
-    useSubmit
+    useActionData
 } from "react-router-dom";
 
-import { useEffect } from "react";
-
 import {
-    getContacts,
-    createContact
-} from "../contacts";
+    getGroup,
+    createGroup
+} from "../api";
 
-export async function loader({ request }) {
-    const url = new URL(request.url);
-    const q = url.searchParams.get("q");
-    const contacts = await getContacts(q);
-
-    return { contacts, q };
+export async function loader() {
+    return { q: null, error: false };
 }
 
-export async function action() {
-    const contact = await createContact();
-    return redirect(`/contacts/${contact.id}/edit`);
+export async function action({ request }) {
+    const formData = await request.formData();
+    const q = formData.get("q");
+    if (q) {
+        console.log(q);
+        const group = await getGroup(q);
+        if (group) {
+            return redirect(`${group.id}`);
+        }
+    }
+
+    if (formData.get("intent") === "create-new") {
+        const group = await createGroup();
+        return redirect(`${group.id}`);
+    }
+
+    return { q, error: true };
 }
 
 export default function Root() {
-    const { contacts, q } = useLoaderData();
-    const navigation = useNavigation();
-    const submit = useSubmit();
-    const searching = navigation.location 
-        && new URLSearchParams(navigation.location.search).has("q");
+    const loaderData = useLoaderData()
+    const actionData = useActionData();
 
-    useEffect(() => {
-        document.getElementById("q").value = q;
-    }, [q]);
+    const { q, error } = Object.assign(loaderData, actionData);
 
     return (
         <>
-            <div id="sidebar">
-                <h1>React Router Contacts</h1>
-                <div>
-                    <Form id="search-form" role="search">
-                        <input
-                            id="q"
-                            className={searching 
-                                ? "loading"
-                                : ""}
-                            aria-label="Search contacts"
-                            placeholder="Search"
-                            type="search"
-                            name="q"
-                            defaultValue={q}
-                            onChange={e => {
-                                const isFirstSearch = q == null;
-                                submit(e.currentTarget.form, {
-                                    replace: !isFirstSearch
-                                });
-                            }}
-                        />
-                        <div
-                            id="search-spinner"
-                            aria-hidden
-                            hidden={!searching}
-                        />
-                        <div
-                            className="sr-only"
-                            aria-live="polite">
-                        </div>
-                    </Form>
-                </div>
-                <nav>
-                    {contacts.length ? (
-                        <ul>
-                            {contacts.map(contact => (
-                                <li key={contact.id}>
-                                    <NavLink
-                                        to={`contacts/${contact.id}`}
-                                        className={({ isActive, isPending }) =>
-                                            isActive
-                                                ? "active"
-                                                : isPending
-                                                    ? "pending"
-                                                    : ""}>
-                                        {contact.first && contact.last
-                                            ? <>{contact.first} {contact.last}</>
-                                            : contact.first
-                                                ? <>{contact.first}</>
-                                                : contact.last
-                                                    ? <>{contact.last}</>
-                                                    : <i>No name</i>}{" "}
-                                        {contact.favorite && <span>★</span>}
-                                    </NavLink>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p>
-                            <i>No contacts found</i>
-                        </p>
-                    )}
-                </nav>
-                <div>
-                    <Form method="post">
-                        <button type="submit">Ny användare</button>
-                    </Form>
-                </div>
-            </div>
-            <div
-                id="detail"
-                className={navigation.state === "loading" ? "loading" : ""}>
-                <Outlet />
+            {error
+                ? <p>Hittade ingen grupp med id {q} 🤷‍♂️</p>
+                : " "
+            }
+            <div>
+                Root
+                <Form method="post">
+                    <input
+                        id="q"
+                        aria-label="Ange ditt grupp-id"
+                        placeholder="Ange ditt grupp-id"
+                        type="search"
+                        name="q"
+                        defaultValue={q}
+                    />
+                </Form>
+                <Form method="post">
+                    <button name="intent" value="create-new">
+                        Eller skapa en ny grupp 🎉
+                    </button>
+                </Form>
             </div>
         </>
     );

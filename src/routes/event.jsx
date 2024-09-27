@@ -1,23 +1,25 @@
 import {
   Form,
-  useLoaderData,
-  // useFetcher
+  useLoaderData
 } from "react-router-dom";
 
 import {
   getEvent,
-  updateEvent
-} from "../competition";
+  getEvents,
+  updateEvent,
+  getContacts
+} from "../api";
 
 export async function loader({ params }) {
   const event = await getEvent(params.eventId);
+  const contacts = await getContacts(params.groupId);
 
   if (event) {
     document.title = `${window.documentTitle}: ${event.name}`;
-    return { event };
+    return { event, contacts };
   }
 
-  throw new Response("", {
+  throw new Response("Aktiviteten hittades inte", {
     status: 404,
     statusText: "Aktiviteten hittades inte"
   });
@@ -31,7 +33,7 @@ export async function action({ request, params }) {
 }
 
 export default function Event() {
-  const { event } = useLoaderData();
+  const { event, contacts } = useLoaderData();
   return (
     <div id="event">
       <div>
@@ -47,6 +49,10 @@ export default function Event() {
 
         {event.notes && <p>{event.notes}</p>}
 
+        {contacts
+          ? <ContactList contacts={contacts} event={event} />
+          : (" ")}
+
         <div>
           <Form action="edit">
             <button type="submit">Edit</button>
@@ -58,12 +64,81 @@ export default function Event() {
               if (!confirm(`Vill du verkligen ta bort aktiviten ${event.name ?? ""}`)) {
                 e.preventDefault();
               }
-            }}
-          >
+            }}>
             <button type="submit">Ta bort</button>
           </Form>
         </div>
       </div>
+    </div>
+  );
+}
+
+async function onScoreChanged(e, event) {
+  if (e.target.value === "") {
+    return;
+  }
+
+  const userId = e.target.name;
+  const result = parseInt(e.target.value);
+  const results = event.results ?? {};
+  results[userId] = result;
+  const scores = calculateScoresFromResults(results);
+
+  await updateEvent(event.id, {results, scores});
+}
+
+function calculateScoresFromResults(results) {
+  const values = Object.values(results);
+  const userIds = Object.keys(results);
+  const sortedValues = [...values].sort((a, b) => a - b);
+  const scores = {};
+  for(let index = 0; index < values.length; index++) {
+    const result = values[index];
+    const userId = userIds[index];
+    const placing = sortedValues.indexOf(result);
+    scores[userId] = placing == 0 
+      ? 0
+      : placing == 1
+        ? 1
+        : placing == 2
+          ? 3
+          : placing == 3
+            ? 5
+            : placing == 4
+              ? 7
+              : 10; 
+  }
+
+  return scores;
+}
+
+function ContactList({ contacts, event }) {
+  return (
+    <div>
+      <ul>
+        {contacts.map(contact => {
+          const score = event.scores && event.scores[contact.id] 
+            ? event.scores[contact.id] 
+            : 0;
+          const result = event.results && event.results[contact.id]
+            ? event.results[contact.id]
+            : 0;
+
+          return (
+            <li key={contact.id}>
+              <p>
+                <b>{contact.first}{contact.last ? ` ${contact.last}` : ""}</b> {score} p
+              </p>
+              <p>Resultat: <input 
+                name={contact.id} 
+                type="numeric" 
+                value={result} 
+                onChange={(e) => onScoreChanged(e, event)}></input>
+              </p>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

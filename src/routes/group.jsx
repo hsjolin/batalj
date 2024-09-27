@@ -11,8 +11,8 @@ import {
 import { useEffect } from "react";
 
 import {
-    getEvents,
-    createEvent,
+    getCompetitions,
+    createCompetition,
     createContact,
     getContacts
 } from "../api";
@@ -20,10 +20,10 @@ import {
 export async function loader({ request, params }) {
     const url = new URL(request.url);
     const q = url.searchParams.get("q");
-    const events = await getEvents(params.competitionId, q);
-    const contacts = await getContacts(params.groupId);
-    return { events, contacts, q };
-}
+    const contacts = await getContacts(params.groupId, q);
+    const competitions = await getCompetitions(params.groupId);
+    return { contacts, competitions, q };
+}   
 
 export async function action(q) {
     const request = q.request;
@@ -37,14 +37,14 @@ export async function action(q) {
         case "create-contact":
             const contact = await createContact(params.groupId);
             return redirect(`contacts/${contact.id}/edit`);
-        case "create-event":
-            const event = await createEvent(params.competitionId);
-            return redirect(`events/${event.id}/edit`);
+        case "create-competition":
+            const competition = await createCompetition(params.groupId);
+            return redirect(`competitions/${competition.id}/edit`);
     }
 }
 
-export default function Competition() {
-    const { events, q, contacts } = useLoaderData();
+export default function Group() {
+    const { competitions, q, contacts } = useLoaderData();
     const navigation = useNavigation();
     const submit = useSubmit();
     const searching = navigation.location
@@ -88,34 +88,69 @@ export default function Competition() {
                     </Form>
                 </div>
                 <nav>
-                    {events.length ? (
+                    {competitions.length ? (
                         <ul>
-                            {events.map(event => (
-                                <li key={event.id}>
+                            {competitions.map(competition => (
+                                <li key={competition.id}>
                                     <NavLink
-                                        to={`events/${event.id}`}
+                                        to={`competitions/${competition.id}`}
                                         className={({ isActive, isPending }) =>
                                             isActive
                                                 ? "active"
                                                 : isPending
                                                     ? "pending"
                                                     : ""}>
-                                        {event.name
-                                            ? <>{event.name}</>
-                                            : <i>Aktivitet utan namn</i>}{" "}
+                                        {competition.name
+                                            ? <>{competition.name}</>
+                                            : <i>Tävling utan namn</i>}{" "}
                                     </NavLink>
                                 </li>
                             ))}
                         </ul>
                     ) : (
                         <p>
-                            <i>Inga aktiviteter 🤷‍♂️</i>
+                            <i>Inga tävlingar 🤷‍♂️</i>
                         </p>
                     )}
                 </nav>
                 <div>
                     <Form method="post">
-                        <button type="submit" name="intent" value="create-event">Ny aktivitet</button>
+                        <button type="submit" name="intent" value="create-competition">Ny tävling</button>
+                    </Form>
+                </div>
+                <nav>
+                    {contacts.length ? (
+                        <ul>
+                            {contacts.map(contact => (
+                                <li key={contact.id}>
+                                    <NavLink
+                                        to={`contacts/${contact.id}`}
+                                        className={({ isActive, isPending }) =>
+                                            isActive
+                                                ? "active"
+                                                : isPending
+                                                    ? "pending"
+                                                    : ""}>
+                                        {contact.first && contact.last
+                                            ? <>{contact.first} {contact.last}</>
+                                            : contact.first
+                                                ? <>{contact.first}</>
+                                                : contact.last
+                                                    ? <>{contact.last}</>
+                                                    : <i>Kontakt utan namn</i>}{" "}
+                                    </NavLink>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>
+                            <i>Inga kontakter 🤷‍♂️</i>
+                        </p>
+                    )}
+                </nav>
+                <div>
+                    <Form method="post">
+                        <button type="submit" name="intent" value="create-contact">Ny kontakt</button>
                     </Form>
                 </div>
             </div>
