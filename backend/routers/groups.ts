@@ -1,6 +1,6 @@
 
 import { Router } from "express";
-import { createContact, getContacts, updateContact } from "../db";
+import { createContact, deleteContact, getContacts, updateContact } from "../db";
 
 export default function groups() {
     const router = Router();
@@ -17,13 +17,13 @@ export default function groups() {
 
             res.json(contact);
         })
-        .put("/:groupId/contacts", async (req, res, _) => {
-            const contact = await updateContact({
-                groupId: req.params.groupId,
-                ...req.body
-            });
-
-            res.json(contact);
+        .put("/:groupId/contacts/:contactId", async (req, res, _) => {
+            const result = await updateContact(req.params.contactId, req.body);
+            res.json(result);
+        })
+        .delete("/:groupId/contacts/:contactId", async (req, res, _) => {
+            const result = await deleteContact(req.params.contactId);
+            res.json(result);
         });
 
     return router;

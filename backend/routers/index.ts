@@ -3,7 +3,7 @@ import { json } from "body-parser";
 import { resolve } from "path";
 import api from "./api";
 
-export default function configure(app: Application) {
+export function configure(app: Application) {
     app
         .get("/", (req, res, next) => {
             res.sendFile(resolve(__dirname, "../index.html"));
