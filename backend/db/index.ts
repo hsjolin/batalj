@@ -3,11 +3,13 @@ import {
     Competition,
     Contact,
     Group,
-    Event as EventModel, 
+    Event as EventModel,
     Score
 } from "../models";
 
 var _client: MongoClient | null;
+var _dataUpdatedListener = (c: DataUpdatedContext) => { };
+
 const uri = "mongodb://localhost:27017/?retryWrites=true";
 
 async function getClient(): Promise<MongoClient> {
@@ -31,6 +33,22 @@ async function exec<T>(func: (db: Db) => Promise<T | null>): Promise<T | null> {
         throw e;
     }
 }
+
+export function setDataUpdatedListener(listener: (context: DataUpdatedContext) => void) {
+    _dataUpdatedListener = listener;
+}
+
+export interface DataUpdatedContext {
+    type: UpdatedType,
+    groupId: string
+}
+
+export type UpdatedType =
+    "competition" |
+    "contact" |
+    "event" |
+    "group" |
+    "score";
 
 export async function dispose(): Promise<void> {
     if (_client == null) {
@@ -81,7 +99,15 @@ export async function updateContact(id: string, updates: any): Promise<Boolean> 
             throw Error(`Failed to update contact. Wrong matched or modified count`);
         }
 
-        return result.matchedCount == 1 && result.modifiedCount == 1;
+        const updated = result.matchedCount == 1 && result.modifiedCount == 1;
+        if (updated) {
+            _dataUpdatedListener({
+                groupId: "TBD",
+                type: "contact"
+            });
+        }
+
+        return updated;
     }) ?? false;
 }
 
@@ -93,6 +119,11 @@ export async function createContact(contact: Contact): Promise<Contact | null> {
         }
 
         contact._id = result.insertedId;
+        _dataUpdatedListener({
+            groupId: contact.groupId.toString(),
+            type: "contact"
+        });
+
         return contact;
     });
 
@@ -109,6 +140,11 @@ export async function deleteContact(contactId: string): Promise<void> {
         if (!result.acknowledged) {
             throw Error(`Failed to delete contact. The write operation was not acknowledged`);
         }
+
+        _dataUpdatedListener({
+            groupId: "TBD",
+            type: "contact"
+        });
     });
 }
 
@@ -142,6 +178,11 @@ export async function updateScore(id: string, updates: any): Promise<Boolean> {
             throw Error(`Failed to update score. Wrong matched or modified count`);
         }
 
+        _dataUpdatedListener({
+            groupId: "TBD",
+            type: "score"
+        });
+
         return result.matchedCount == 1 && result.modifiedCount == 1;
     }) ?? false;
 }
@@ -157,6 +198,11 @@ export async function createScore(value: Score): Promise<Score | null> {
         return value;
     });
 
+    _dataUpdatedListener({
+        groupId: "TBD",
+        type: "score"
+    });
+
     return newValue;
 }
 
@@ -170,6 +216,11 @@ export async function deleteScore(id: string): Promise<void> {
         if (!result.acknowledged) {
             throw Error(`Failed to delete score. The write operation was not acknowledged`);
         }
+
+        _dataUpdatedListener({
+            groupId: "TBD",
+            type: "score"
+        });
     });
 }
 
@@ -212,7 +263,15 @@ export async function updateCompetition(id: string, updates: any): Promise<Boole
             throw Error(`Failed to update competition. Wrong matched or modified count`);
         }
 
-        return result.matchedCount == 1 && result.modifiedCount == 1;
+        const updated = result.matchedCount == 1 && result.modifiedCount == 1;
+        if (updated) {
+            _dataUpdatedListener({
+                groupId: "TBD",
+                type: "competition"
+            });
+        }
+
+        return updated;
     }) ?? false;
 }
 
@@ -224,6 +283,12 @@ export async function createCompetition(competition: Competition): Promise<Compe
         }
 
         competition._id = result.insertedId;
+
+        _dataUpdatedListener({
+            groupId: competition.groupId.toString(),
+            type: "competition"
+        });
+    
         return competition;
     });
 
@@ -240,6 +305,11 @@ export async function deleteCompetition(competitionId: string): Promise<void> {
         if (!result.acknowledged) {
             throw Error(`Failed to delete competition. The write operation was not acknowledged`);
         }
+
+        _dataUpdatedListener({
+            groupId: "TBD",
+            type: "competition"
+        });
     });
 }
 
@@ -282,7 +352,15 @@ export async function updateEvent(id: string, updates: any): Promise<Boolean> {
             throw Error(`Failed to update event. Wrong matched or modified count`);
         }
 
-        return result.matchedCount == 1 && result.modifiedCount == 1;
+        const updated = result.matchedCount == 1 && result.modifiedCount == 1;
+        if (updated) {
+            _dataUpdatedListener({
+                groupId: "TBD",
+                type: "event"
+            });
+        }
+
+        return updated;
     }) ?? false;
 }
 
@@ -294,6 +372,12 @@ export async function createEvent(event: EventModel): Promise<EventModel | null>
         }
 
         event._id = result.insertedId;
+
+        _dataUpdatedListener({
+            groupId: "TBD",
+            type: "event"
+        });
+    
         return event;
     });
 
@@ -310,6 +394,11 @@ export async function deleteEvent(eventId: string): Promise<void> {
         if (!result.acknowledged) {
             throw Error(`Failed to delete event. The write operation was not acknowledged`);
         }
+
+        _dataUpdatedListener({
+            groupId: "TBD",
+            type: "event"
+        });
     });
 }
 
@@ -343,7 +432,15 @@ export async function updateGroup(id: string, updates: any): Promise<Boolean> {
             throw Error(`Failed to update group. Wrong matched or modified count`);
         }
 
-        return result.matchedCount == 1 && result.modifiedCount == 1;
+        const updated = result.matchedCount == 1 && result.modifiedCount == 1;
+        if (updated) {
+            _dataUpdatedListener({
+                groupId: id,
+                type: "group"
+            });
+        }
+
+        return updated;
     }) ?? false;
 }
 
@@ -355,6 +452,11 @@ export async function createGroup(group: Group): Promise<Group | null> {
         }
 
         group._id = result.insertedId;
+        _dataUpdatedListener({
+            groupId: group._id!.toString(),
+            type: "group"
+        });
+    
         return group;
     });
 
@@ -371,6 +473,11 @@ export async function deleteGroup(groupId: string): Promise<void> {
         if (!result.acknowledged) {
             throw Error(`Failed to delete group. The write operation was not acknowledged`);
         }
+
+        _dataUpdatedListener({
+            groupId: groupId,
+            type: "group"
+        });
     });
 }
 

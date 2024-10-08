@@ -1,16 +1,17 @@
 import { Router } from "express";
 import groupRouter from "./group";
 import { createGroup, getGroupById } from "../db";
-import { setGroup } from "../utils";
+import { getError, setError, setGroup } from "../utils";
 
 export default function api() {
     const router = Router();
 
     router
         .use("/v1", apiV1())
-        .use((_, res, __) => {
-            res.json({
-                error: "Invalid route",
+        .use((req, res, _) => {
+            const error = getError(req) ?? "Not found";
+            res.status(404).json({
+                Message: error
             });
         });
 
@@ -31,7 +32,8 @@ function apiV1() {
                 return groupRouter()(req, res, next);
             }
 
-            res.status(404).send(`Group with id ${req.params.groupId} was not found`);
+            setError(req, `Group with id ${req.params.groupId} was not found`);
+            next();
         });
 
     return router;

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
     getCompetition,
+    setError,
     setEvent
 } from "../utils";
 import {
@@ -34,7 +35,8 @@ export default function eventsRouter(): Router {
                 return eventRouter()(req, res, next);
             }
 
-            res.status(404).send(`Event with id ${req.params.eventId} was not found`);
+            setError(req, `Event with id ${req.params.eventId} was not found`);
+            next();
         });
 
     return router;

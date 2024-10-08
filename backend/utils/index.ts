@@ -33,6 +33,14 @@ export function setEvent(req: Request, event: Event): void {
     set("Event", event, req);
 }
 
+export function setError(req: Request, message:string): void {
+    set("Error", message, req);
+}
+
+export function getError(req: Request): string {
+    return get<string>("Error", req);
+}
+
 function get<T>(name: string, req: any): T {
     const value = req[name];
     if (value) {

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { setGroup } from "../utils";
+import { setError, setGroup } from "../utils";
 import {
     createGroup,
     getGroupById,
@@ -20,7 +20,8 @@ export default function groupsRouter(): Router {
                 return groupRouter()(req, res, next);
             }
 
-            res.status(404).send(`Group with id ${req.params.groupId} was not found`);
+            setError(req, `Group with id ${req.params.groupId} was not found`);
+            next();
         });
 
     return router;

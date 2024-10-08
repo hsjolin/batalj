@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getGroup, setContact } from "../utils";
+import { getGroup, setContact, setError } from "../utils";
 import {
     createContact, 
     getContactById, 
@@ -31,7 +31,8 @@ export default function contactsRouter(): Router {
                 return contactRouter()(req, res, next);
             } 
           
-            res.status(404).send(`Contact with id ${req.params.contactId} was not found`);
+            setError(req, `Contact with id ${req.params.contactId} was not found`);
+            next();
         });
 
     return router;

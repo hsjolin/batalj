@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getGroup, setCompetition } from "../utils";
+import { getGroup, setCompetition, setError } from "../utils";
 import {
     createCompetition,
     getCompetitionById,
@@ -31,7 +31,8 @@ export default function competitionsRouter(): Router {
                 return competitionRouter()(req, res, next);
             } 
             
-            res.status(404).send(`Competition with id ${req.params.competitionId} was not found`);
+            setError(req, `Competition with id ${req.params.competitionId} was not found`);
+            next();
         });
 
     return router;
