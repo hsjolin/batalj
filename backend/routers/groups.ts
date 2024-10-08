@@ -1,29 +1,26 @@
-
 import { Router } from "express";
-import { createContact, deleteContact, getContacts, updateContact } from "../db";
+import { setGroup } from "../utils";
+import {
+    createGroup,
+    getGroupById,
+} from "../db";
+import groupRouter from "./group";
 
-export default function groups() {
+export default function groupsRouter(): Router {
     const router = Router();
     router
-        .get("/:groupId/contacts", async (req, res, _) => {
-            const contacts = await getContacts(req.params.groupId);
-            res.json(contacts);
+        .post("/groups", async (req, res, _) => {
+            const group = await createGroup(req.body);
+            res.json(group);
         })
-        .post("/:groupId/contacts", async (req, res, _) => {
-            const contact = await createContact({
-                groupId: req.params.groupId,
-                ...req.body
-            });
+        .use("/groups/:groupId", async (req, res, next) => {
+            const group = await getGroupById(req.params.groupId);
+            if (group) {
+                setGroup(req, group);
+                return groupRouter()(req, res, next);
+            }
 
-            res.json(contact);
-        })
-        .put("/:groupId/contacts/:contactId", async (req, res, _) => {
-            const result = await updateContact(req.params.contactId, req.body);
-            res.json(result);
-        })
-        .delete("/:groupId/contacts/:contactId", async (req, res, _) => {
-            const result = await deleteContact(req.params.contactId);
-            res.json(result);
+            res.status(404).send(`Group with id ${req.params.groupId} was not found`);
         });
 
     return router;

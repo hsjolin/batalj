@@ -1,5 +1,7 @@
 import { Router } from "express";
-import groups from "./groups";
+import groupRouter from "./group";
+import { createGroup, getGroupById } from "../db";
+import { setGroup } from "../utils";
 
 export default function api() {
     const router = Router();
@@ -17,7 +19,20 @@ export default function api() {
 
 function apiV1() {
     const router = Router();
-    router.use("/groups", groups());
+    router
+        .post("/groups", async (req, res, _) => {
+            const group = await createGroup(req.body);
+            res.json(group);
+        })
+        .use("/groups/:groupId", async (req, res, next) => {
+            const group = await getGroupById(req.params.groupId);
+            if (group) {
+                setGroup(req, group);
+                return groupRouter()(req, res, next);
+            }
+
+            res.status(404).send(`Group with id ${req.params.groupId} was not found`);
+        });
 
     return router;
 }

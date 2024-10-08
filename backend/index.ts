@@ -53,7 +53,6 @@ const wss = new WebSocketServer({ noServer: true });
 server.on("upgrade", (req, socket, head) => {
     socket.on("error", onSocketPreError);
 
-    // perform auth here
     wss.handleUpgrade(req, socket, head, (ws) => {
         socket.removeListener("error", onSocketPreError);
         wss.emit("connection", ws, req);
