@@ -1,6 +1,6 @@
 import { WebSocketServer } from "ws";
 import http from "http";
-import { setDataUpdatedListener } from "../db";
+import { setDataUpdatedListener } from "../routers";
 
 export default class WSServer {
     wss = new WebSocketServer({ noServer: true });

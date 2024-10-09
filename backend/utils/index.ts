@@ -37,8 +37,13 @@ export function setError(req: Request, message:string): void {
     set("Error", message, req);
 }
 
-export function getError(req: Request): string {
-    return get<string>("Error", req);
+export function getError(req: any): string | null {
+    const value = req["Error"];
+    if (value) {
+        return value as string;
+    }
+
+    return null;
 }
 
 function get<T>(name: string, req: any): T {

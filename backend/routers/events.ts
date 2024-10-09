@@ -11,7 +11,6 @@ import {
 } from "../db";
 import eventRouter from "./event";
 
-
 export default function eventsRouter(): Router {
     const router = Router();
     router
