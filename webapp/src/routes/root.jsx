@@ -6,11 +6,16 @@ import {
 } from "react-router-dom";
 
 import {
+    closeWebsocketConnection
+} from "../websocket";
+
+import {
     getGroup,
     createGroup
 } from "../api";
 
 export async function loader() {
+    closeWebsocketConnection();
     return { q: null, error: false };
 }
 
@@ -21,13 +26,13 @@ export async function action({ request }) {
         console.log(q);
         const group = await getGroup(q);
         if (group) {
-            return redirect(`${group.id}`);
+            return redirect(`${group._id}`);
         }
     }
 
     if (formData.get("intent") === "create-new") {
         const group = await createGroup();
-        return redirect(`${group.id}`);
+        return redirect(`${group._id}`);
     }
 
     return { q, error: true };
@@ -46,16 +51,18 @@ export default function Root() {
                 : " "
             }
             <div>
-                Root
                 <Form method="post">
-                    <input
-                        id="q"
-                        aria-label="Ange ditt grupp-id"
-                        placeholder="Ange ditt grupp-id"
-                        type="search"
-                        name="q"
-                        defaultValue={q}
-                    />
+                    <p>
+                        <span>Grupp-ID</span>
+                        <input
+                            id="q"
+                            aria-label="Ange ditt grupp-id"
+                            placeholder="Ange ditt grupp-id"
+                            type="search"
+                            name="q"
+                            defaultValue={q}
+                        />
+                    </p>
                 </Form>
                 <Form method="post">
                     <button name="intent" value="create-new">

@@ -9,7 +9,14 @@ import { updateContact } from "../api";
 export async function action({ request, params }) {
     const formData = await request.formData();
     const updates = Object.fromEntries(formData);
-    await updateContact(params.contactId, updates);
+    updates.avatar = updates.avatar 
+        ? updates.avatar
+        : `https://robohash.org/${params.contactId}.png?size=200x200`;
+
+    await updateContact(
+        params.contactId,
+        params.groupId,
+        updates);
 
     return redirect(`/${params.groupId}/contacts/${params.contactId}`);
 }
@@ -37,15 +44,6 @@ export default function EditContact() {
                     defaultValue={contact?.last}
                 />
             </p>
-            <label>
-                <span>Twitter</span>
-                <input
-                    type="text"
-                    name="twitter"
-                    placeholder="@jack"
-                    defaultValue={contact?.twitter}
-                />
-            </label>
             <label>
                 <span>Avatar URL</span>
                 <input

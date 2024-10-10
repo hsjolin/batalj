@@ -9,7 +9,7 @@ import { updateEvent } from "../api";
 export async function action({ request, params }) {
     const formData = await request.formData();
     const updates = Object.fromEntries(formData);
-    await updateEvent(params.eventId, updates);
+    await updateEvent(params, updates);
 
     return redirect(`/${params.groupId}/competitions/${params.competitionId}/events/${params.eventId}`);
 }

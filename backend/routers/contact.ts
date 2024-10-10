@@ -13,11 +13,12 @@ export default function contactRouter(): Router {
             res.json(contact);
         })
         .put("/", async (req, res, _) => {
-            const result = await updateContact(getContact(req)._id?.toString()!, req.body);
+            console.log(getContact(req), req.body);
+            const result = await updateContact(getContact(req)._id!.toString(), req.body);
             res.json(result);
         })
         .delete("/", async (req, res, _) => {
-            const result = await deleteContact(getContact(req)._id?.toString()!);
+            const result = await deleteContact(getContact(req)._id!.toString());
             res.json(result);
         });
 

@@ -29,8 +29,8 @@ export default function competitionsRouter(): Router {
             if (competition && competition.groupId.equals(group._id)) {
                 setCompetition(req, competition);
                 return competitionRouter()(req, res, next);
-            } 
-            
+            }
+
             setError(req, `Competition with id ${req.params.competitionId} was not found`);
             next();
         });

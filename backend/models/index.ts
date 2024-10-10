@@ -1,5 +1,4 @@
 import { ObjectId } from "mongodb";
-import { Type } from "typescript";
 
 export interface Contact {
     _id?: ObjectId;
@@ -7,6 +6,7 @@ export interface Contact {
     first: string;
     last: string;
     notes: string;
+    avatar: string;
 }
 
 export interface Group {

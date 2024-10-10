@@ -1,6 +1,7 @@
 import { WebSocketServer } from "ws";
 import http from "http";
 import { setDataUpdatedListener } from "../routers";
+import { getGroupById } from "../db";
 
 export default class WSServer {
     wss = new WebSocketServer({ noServer: true });
@@ -14,26 +15,36 @@ export default class WSServer {
             });
         });
 
-        server.on("upgrade", (req, socket, head) => {
+        server.on("upgrade", async (req, socket, head) => {
             socket.on("error", onSocketPreError);
 
-            // Perform authentication based on group id (and pwd) here.
+            const groupId = req.url?.replace("/", "");
+            if (!groupId) {
+                throw new Error("Expected group id in url");
+            }
 
-            this.wss.handleUpgrade(req, socket, head, (ws) => {
+            const group = await getGroupById(groupId);
+            if (!group) {
+                throw new Error(`Unable to find group with id ${groupId}`);
+            }
+
+            this.wss.handleUpgrade(req, socket, head, (client) => {
                 socket.removeListener("error", onSocketPreError);
-                this.wss.emit("connection", ws, req);
+                (client as any).group = group;
+                this.wss.emit("connection", client, req);
             });
         });
 
         setDataUpdatedListener(context => {
-            // TODO: Based on information in context filter out 
-            // clients that should get this message
-            this.wss.clients.forEach(client => {
-                client.send(context.type, { binary: false});
-            });
+            this.wss.clients
+                .forEach(client => {
+                    if ((client as any).group?._id.toString() === context.groupId) {
+                        client.send(context.type, { binary: false });
+                    }
+                });
         });
     }
-    
+
     dispose() {
         console.log("WebSocket server is shutting down...");
         this.wss.clients.forEach(client => client.close());

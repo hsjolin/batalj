@@ -5,10 +5,15 @@ import {
     redirect,
     useLoaderData,
     useNavigation,
-    useSubmit
+    useParams
 } from "react-router-dom";
 
-import { useEffect } from "react";
+import {
+    openWebsocketConnection,
+    onWebsocketEvent
+} from "../websocket";
+
+import { useEffect, useState } from "react";
 
 import {
     getCompetitions,
@@ -19,81 +24,57 @@ import {
 
 export async function loader({ request, params }) {
     const url = new URL(request.url);
-    const q = url.searchParams.get("q");
-    const contacts = await getContacts(params.groupId, q);
+    const contacts = await getContacts(params.groupId);
     const competitions = await getCompetitions(params.groupId);
-    return { contacts, competitions, q };
-}   
+    return { contacts, competitions };
+}
 
 export async function action(q) {
     const request = q.request;
     const params = q.params;
-
-    console.log(q);
 
     const formData = await request.formData();
     const intent = formData.get("intent");
     switch (intent) {
         case "create-contact":
             const contact = await createContact(params.groupId);
-            return redirect(`contacts/${contact.id}/edit`);
+            return redirect(`contacts/${contact._id}/edit`);
         case "create-competition":
             const competition = await createCompetition(params.groupId);
-            return redirect(`competitions/${competition.id}/edit`);
+            return redirect(`competitions/${competition._id}/edit`);
     }
 }
 
 export default function Group() {
-    const { competitions, q, contacts } = useLoaderData();
+    let { competitions, contacts } = useLoaderData();
     const navigation = useNavigation();
-    const submit = useSubmit();
-    const searching = navigation.location
-        && new URLSearchParams(navigation.location.search).has("q");
+    const params = useParams();
 
+    const [data, setContacts] = useState(contacts);
     useEffect(() => {
-        document.getElementById("q").value = q;
-    }, [q]);
+        onWebsocketEvent(async evnt => {
+            if (evnt.type === "message" && evnt.message === "contact") {
+                setContacts(await getContacts(params.groupId));
+            }
+        });
+
+        openWebsocketConnection(params.groupId);
+    }, []);
+
+    if (data) {
+        contacts = data;
+    }
 
     return (
         <>
             <div id="sidebar">
-                <div>
-                    <Form id="search-form" role="search">
-                        <input
-                            id="q"
-                            className={searching
-                                ? "loading"
-                                : ""}
-                            aria-label="Search contacts"
-                            placeholder="Search"
-                            type="search"
-                            name="q"
-                            defaultValue={q}
-                            onChange={e => {
-                                const isFirstSearch = q == null;
-                                submit(e.currentTarget.form, {
-                                    replace: !isFirstSearch
-                                });
-                            }}
-                        />
-                        <div
-                            id="search-spinner"
-                            aria-hidden
-                            hidden={!searching}
-                        />
-                        <div
-                            className="sr-only"
-                            aria-live="polite">
-                        </div>
-                    </Form>
-                </div>
                 <nav>
                     {competitions.length ? (
                         <ul>
                             {competitions.map(competition => (
-                                <li key={competition.id}>
+                                <li key={competition._id}>
                                     <NavLink
-                                        to={`competitions/${competition.id}`}
+                                        to={`competitions/${competition._id}`}
                                         className={({ isActive, isPending }) =>
                                             isActive
                                                 ? "active"
@@ -122,9 +103,9 @@ export default function Group() {
                     {contacts.length ? (
                         <ul>
                             {contacts.map(contact => (
-                                <li key={contact.id}>
+                                <li key={contact._id}>
                                     <NavLink
-                                        to={`contacts/${contact.id}`}
+                                        to={`contacts/${contact._id}`}
                                         className={({ isActive, isPending }) =>
                                             isActive
                                                 ? "active"

@@ -10,6 +10,7 @@ export default function groupsRouter(): Router {
     const router = Router();
     router
         .post("/groups", async (req, res, _) => {
+            console.log("hej");
             const group = await createGroup(req.body);
             res.json(group);
         })

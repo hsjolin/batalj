@@ -5,7 +5,6 @@ import {
 
 import {
   getEvent,
-  getEvents,
   updateEvent,
   getContacts
 } from "../api";
@@ -27,9 +26,7 @@ export async function loader({ params }) {
 
 export async function action({ request, params }) {
   const formData = await request.formData();
-  return await updateEvent(params.eventId, {
-    name: formData.get("name")
-  });
+  return await updateEvent(params, { name: formData.get("name") });
 }
 
 export default function Event() {
@@ -84,7 +81,7 @@ async function onScoreChanged(e, event) {
   results[userId] = result;
   const scores = calculateScoresFromResults(results);
 
-  await updateEvent(event.id, {results, scores});
+  await updateEvent(event, { results, scores });
 }
 
 function calculateScoresFromResults(results) {
@@ -92,11 +89,11 @@ function calculateScoresFromResults(results) {
   const userIds = Object.keys(results);
   const sortedValues = [...values].sort((a, b) => a - b);
   const scores = {};
-  for(let index = 0; index < values.length; index++) {
+  for (let index = 0; index < values.length; index++) {
     const result = values[index];
     const userId = userIds[index];
     const placing = sortedValues.indexOf(result);
-    scores[userId] = placing == 0 
+    scores[userId] = placing == 0
       ? 0
       : placing == 1
         ? 1
@@ -106,7 +103,7 @@ function calculateScoresFromResults(results) {
             ? 5
             : placing == 4
               ? 7
-              : 10; 
+              : 10;
   }
 
   return scores;
@@ -117,22 +114,22 @@ function ContactList({ contacts, event }) {
     <div>
       <ul>
         {contacts.map(contact => {
-          const score = event.scores && event.scores[contact.id] 
-            ? event.scores[contact.id] 
+          const score = event.scores && event.scores[contact._id]
+            ? event.scores[contact._id]
             : 0;
-          const result = event.results && event.results[contact.id]
-            ? event.results[contact.id]
+          const result = event.results && event.results[contact._id]
+            ? event.results[contact._id]
             : 0;
 
           return (
-            <li key={contact.id}>
+            <li key={contact._id}>
               <p>
                 <b>{contact.first}{contact.last ? ` ${contact.last}` : ""}</b> {score} p
               </p>
-              <p>Resultat: <input 
-                name={contact.id} 
-                type="numeric" 
-                value={result} 
+              <p>Resultat: <input
+                name={contact._id}
+                type="numeric"
+                value={result}
                 onChange={(e) => onScoreChanged(e, event)}></input>
               </p>
             </li>

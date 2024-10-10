@@ -36,10 +36,10 @@ export async function action(q) {
     switch (intent) {
         case "create-contact":
             const contact = await createContact(params.groupId);
-            return redirect(`contacts/${contact.id}/edit`);
+            return redirect(`contacts/${contact._id}/edit`);
         case "create-event":
             const event = await createEvent(params.competitionId);
-            return redirect(`events/${event.id}/edit`);
+            return redirect(`events/${event._id}/edit`);
     }
 }
 
@@ -91,9 +91,9 @@ export default function Competition() {
                     {events.length ? (
                         <ul>
                             {events.map(event => (
-                                <li key={event.id}>
+                                <li key={event._id}>
                                     <NavLink
-                                        to={`events/${event.id}`}
+                                        to={`events/${event._id}`}
                                         className={({ isActive, isPending }) =>
                                             isActive
                                                 ? "active"

@@ -25,7 +25,9 @@ export async function loader({ params }) {
 
 export async function action({ request, params }) {
   const formData = await request.formData();
-  return await updateContact(params.contactId, {
+  return await updateContact(
+    params.contactId, 
+    params.groupId, {
     favorite: formData.get("favorite") === "true"
   });
 }
@@ -37,9 +39,8 @@ export default function Contact() {
       <div>
         <img
           key={contact.avatar}
-          src={
-            contact.avatar ||
-            `https://robohash.org/${contact.id}.png?size=200x200`
+          src={contact.avatar ||
+            `https://robohash.org/${contact._id}.png?size=200x200`
           }
         />
       </div>
@@ -55,17 +56,6 @@ export default function Contact() {
           )}{" "}
           <Favorite contact={contact} />
         </h1>
-
-        {contact.twitter && (
-          <p>
-            <a
-              target="_blank"
-              href={`https://twitter.com/${contact.twitter}`}
-            >
-              {contact.twitter}
-            </a>
-          </p>
-        )}
 
         {contact.notes && <p>{contact.notes}</p>}
 

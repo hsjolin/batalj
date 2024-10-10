@@ -24,7 +24,7 @@
     wsOpen.addEventListener("click", () => {
         closeConnection();
 
-        ws = new WebSocket("ws://localhost:3000");
+        ws = new WebSocket("ws://localhost:3000/67004c7a20ce9ba09d610430");
 
         ws.addEventListener("error", () => {
             showMessage("WebSocket error");
