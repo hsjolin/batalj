@@ -33,7 +33,7 @@ export default class WSServer {
         });
 
         setDataUpdatedListener(context => {
-            console.log(context.type, context.uri);
+            console.log(`Message of type '${context.type}' recieved. Distributing to ${this.wss.clients.size} clients`);
             this.wss.clients
                 .forEach(client => {
                     if ((client as any).group?._id.toString() === context.groupId) {

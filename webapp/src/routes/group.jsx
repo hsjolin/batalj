@@ -9,9 +9,8 @@ import {
 } from "react-router-dom";
 
 import {
-    openWebsocketConnection,
-    onWebsocketEvent,
-    closeWebsocketConnection
+    addWebsocketListener,
+    removeWebsocketListener
 } from "../websocket";
 
 import { useEffect, useState } from "react";
@@ -55,19 +54,20 @@ export default function Group() {
     const [competitions, setCompetitions] = useState(initialCompetitions);
 
     useEffect(() => {
-        openWebsocketConnection(params.groupId);
-        onWebsocketEvent(async evnt => {
-            if (evnt.type === "message" && evnt.message === "contact") {
-                setContacts(await getContacts(params.groupId));
+        const listenerRef = addWebsocketListener(params.groupId,
+            async evnt => {
+                if (evnt.type === "message" && evnt.message === "contact") {
+                    setContacts(await getContacts(params.groupId));
+                }
+    
+                if (evnt.type === "message" && evnt.message === "competition") {
+                    setCompetitions(await getCompetitions(params.groupId));
+                }
             }
-
-            if (evnt.type === "message" && evnt.message === "competition") {
-                setCompetitions(await getCompetitions(params.groupId));
-            }
-        });
+        );
 
         return () => {
-            closeWebsocketConnection();
+            removeWebsocketListener(listenerRef);
         };
     }, []);
 

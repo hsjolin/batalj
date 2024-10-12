@@ -1,20 +1,29 @@
 import {
   Form,
   useLoaderData,
-  useFetcher
+  useParams
 } from "react-router-dom";
 
 import {
-  getContact,
-  updateContact
+  useState,
+  useEffect
+} from "react";
+
+import {
+  getContact
 } from "../api";
+
+import {
+  addWebsocketListener,
+  removeWebsocketListener
+} from "../websocket";
 
 export async function loader({ params }) {
   const contact = await getContact(params.contactId);
 
   if (contact) {
     document.title = `${window.documentTitle}: ${contact.first} ${contact.last}`;
-    return { contact };
+    return { initialData: contact };
   }
 
   throw new Response("", {
@@ -24,7 +33,23 @@ export async function loader({ params }) {
 }
 
 export default function Contact() {
-  const { contact } = useLoaderData();
+  const { initialData } = useLoaderData();
+  const [contact, setData] = useState(initialData);
+  const params = useParams();
+
+  useEffect(() => {
+    const listenerRef = addWebsocketListener(params.groupId,
+      async evnt => {
+        if (evnt.type === "message" && evnt.message === "contact") {
+          setData(await getContact(params.contactId));
+        }
+      });
+
+    return () => {
+      removeWebsocketListener(listenerRef);
+    }
+  }, []);
+
   return (
     <div id="contact">
       <div>
@@ -45,7 +70,6 @@ export default function Contact() {
           ) : (
             <i>No Name</i>
           )}{" "}
-          <Favorite contact={contact} />
         </h1>
 
         {contact.notes && <p>{contact.notes}</p>}
@@ -68,29 +92,5 @@ export default function Contact() {
         </div>
       </div>
     </div>
-  );
-}
-
-function Favorite({ contact }) {
-  const fetcher = useFetcher();
-
-  const favorite = fetcher.formData
-    ? fetcher.formData.get("favorite") == "true"
-    : contact.favorite;
-
-  return (
-    <fetcher.Form method="post">
-      <button
-        name="favorite"
-        value={favorite ? "false" : "true"}
-        aria-label={
-          favorite
-            ? "Remove from favorites"
-            : "Add to favorites"
-        }
-      >
-        {favorite ? "★" : "☆"}
-      </button>
-    </fetcher.Form>
   );
 }
