@@ -1,6 +1,5 @@
 import { Request } from "express";
 import { Competition, Contact, Event, Group } from "../models";
-import { EntityType } from "../routers";
 
 export function getGroup(req: Request): Group {
     return get<Group>("Group", req);

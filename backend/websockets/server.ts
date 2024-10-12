@@ -10,9 +10,6 @@ export default class WSServer {
         this.wss.on("connection", (ws, req) => {
             ws.on("error", onSocketPostError);
             ws.on("message", msg => { console.log(msg.toString()); });
-            ws.on("close", () => {
-                console.log("Client connection closed");
-            });
         });
 
         server.on("upgrade", async (req, socket, head) => {
@@ -20,12 +17,12 @@ export default class WSServer {
 
             const groupId = req.url?.replace("/", "");
             if (!groupId) {
-                throw new Error("Expected group id in url");
+                return new Error("Expected group id in url");
             }
 
             const group = await getGroupById(groupId);
             if (!group) {
-                throw new Error(`Unable to find group with id ${groupId}`);
+                return new Error(`Unable to find group with id ${groupId}`);
             }
 
             this.wss.handleUpgrade(req, socket, head, (client) => {
@@ -36,10 +33,11 @@ export default class WSServer {
         });
 
         setDataUpdatedListener(context => {
+            console.log(context.type, context.uri);
             this.wss.clients
                 .forEach(client => {
                     if ((client as any).group?._id.toString() === context.groupId) {
-                        client.send(context.type, { binary: false });
+                        client.send(JSON.stringify(context), { binary: false });
                     }
                 });
         });

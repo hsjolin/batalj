@@ -1,8 +1,8 @@
 import localforage from "localforage";
-import { matchSorter } from "match-sorter";
 import sortBy from "sort-by";
 
-const baseUri = "http://localhost:3000/api/v1";
+const baseUri = "/api/v1";
+const host = "http://localhost:3000";
 
 export async function getEvents(competitionId) {
   return (await get("events"))
@@ -74,20 +74,20 @@ export async function getGroups() {
 }
 
 export async function getContacts(groupId) {
-  return (await get("contacts"))
+  return (await get("contact"))
     .filter(contact => contact.groupId === groupId);
 }
 
 export async function createContact(groupId) {
-  return await create("contacts", `/groups/${groupId}/contacts`);
+  return await create("contact", `/groups/${groupId}/contacts`);
 }
 
 export async function getContact(id) {
-  return await getOne("contacts", id);
+  return await getOne("contact", id);
 }
 
 export async function updateContact(id, groupId, updates) {
-  return await update("contacts", id, `/groups/${groupId}/contacts/${id}`, updates);
+  return await update("contact", id, `/groups/${groupId}/contacts/${id}`, updates);
 }
 
 export async function deleteContact(id, groupId) {
@@ -100,7 +100,10 @@ async function getOne(key, id) {
 }
 
 async function get(key) {
-  let items = await localforage.getItem(key);
+  const result = await localforage.getItem(key) ?? [];
+  let items = Array.isArray(result)
+    ? result
+    : [result];
 
   if (!items) {
     items = [];
@@ -110,9 +113,7 @@ async function get(key) {
 }
 
 export async function synchronize(key, uri) {
-  console.log("Synchronizing", key, uri);
-
-  const res = await fetch(`${baseUri}${uri}`, {
+  const res = await fetch(`${host}${uri}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -122,11 +123,11 @@ export async function synchronize(key, uri) {
   assureResponse(res);
 
   const items = await res.json();
-  set(key, items)
+  set(key, items);
 }
 
 async function create(key, uri, extra) {
-  const res = await fetch(`${baseUri}${uri}`, {
+  const res = await fetch(`${host}${baseUri}${uri}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -137,20 +138,20 @@ async function create(key, uri, extra) {
   assureResponse(res);
 
   const newItem = await res.json();
-  let items = await localforage.getItem(key) ?? [];
+  let items = await get(key) ?? [];
   items.unshift(newItem);
   await set(key, items);
   return newItem;
 }
 
 async function update(key, id, uri, updates) {
-  const items = await localforage.getItem(key);
+  const items = await get(key);
   let item = items.find(item => item._id === id);
   if (!item) {
     throw new Error(`No ${key} item found for ${id}`);
   }
 
-  const res = await fetch(`${baseUri}${uri}`, {
+  const res = await fetch(`${host}${baseUri}${uri}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -167,7 +168,7 @@ async function update(key, id, uri, updates) {
 }
 
 async function deleteItem(uri) {
-  const res = await fetch(`${baseUri}${uri}`, {
+  const res = await fetch(`${host}${baseUri}${uri}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -179,7 +180,6 @@ async function deleteItem(uri) {
 }
 
 async function set(key, data) {
-  console.log(key, data);
   return await localforage.setItem(key, data);
 }
 

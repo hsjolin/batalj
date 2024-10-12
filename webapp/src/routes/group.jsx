@@ -10,7 +10,8 @@ import {
 
 import {
     openWebsocketConnection,
-    onWebsocketEvent
+    onWebsocketEvent,
+    closeWebsocketConnection
 } from "../websocket";
 
 import { useEffect, useState } from "react";
@@ -24,9 +25,9 @@ import {
 
 export async function loader({ request, params }) {
     const url = new URL(request.url);
-    const contacts = await getContacts(params.groupId);
-    const competitions = await getCompetitions(params.groupId);
-    return { contacts, competitions };
+    const initialContacts = await getContacts(params.groupId);
+    const initialCompetitions = await getCompetitions(params.groupId);
+    return { initialContacts, initialCompetitions };
 }
 
 export async function action(q) {
@@ -46,24 +47,29 @@ export async function action(q) {
 }
 
 export default function Group() {
-    let { competitions, contacts } = useLoaderData();
     const navigation = useNavigation();
     const params = useParams();
 
-    const [data, setContacts] = useState(contacts);
+    const { initialContacts, initialCompetitions } = useLoaderData();
+    const [contacts, setContacts] = useState(initialContacts);
+    const [competitions, setCompetitions] = useState(initialCompetitions);
+
     useEffect(() => {
+        openWebsocketConnection(params.groupId);
         onWebsocketEvent(async evnt => {
             if (evnt.type === "message" && evnt.message === "contact") {
                 setContacts(await getContacts(params.groupId));
             }
+
+            if (evnt.type === "message" && evnt.message === "competition") {
+                setCompetitions(await getCompetitions(params.groupId));
+            }
         });
 
-        openWebsocketConnection(params.groupId);
+        return () => {
+            closeWebsocketConnection();
+        };
     }, []);
-
-    if (data) {
-        contacts = data;
-    }
 
     return (
         <>

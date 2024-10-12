@@ -22,8 +22,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import Contact, {
-  loader as contactLoader,
-  action as contactAction
+  loader as contactLoader
 } from "./routes/contact";
 import EditContact, {
   action as editAction
@@ -68,7 +67,6 @@ const router = createBrowserRouter([
           {
             path: "contacts/:contactId",
             element: <Contact />,
-            action: contactAction,
             loader: contactLoader
           },
           {

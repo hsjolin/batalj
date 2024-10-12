@@ -13,7 +13,6 @@ export default function contactRouter(): Router {
             res.json(contact);
         })
         .put("/", async (req, res, _) => {
-            console.log(getContact(req), req.body);
             const result = await updateContact(getContact(req)._id!.toString(), req.body);
             res.json(result);
         })

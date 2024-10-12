@@ -15,7 +15,6 @@ import {
 } from "../api";
 
 export async function loader() {
-    closeWebsocketConnection();
     return { q: null, error: false };
 }
 

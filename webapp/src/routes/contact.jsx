@@ -23,15 +23,6 @@ export async function loader({ params }) {
   });
 }
 
-export async function action({ request, params }) {
-  const formData = await request.formData();
-  return await updateContact(
-    params.contactId, 
-    params.groupId, {
-    favorite: formData.get("favorite") === "true"
-  });
-}
-
 export default function Contact() {
   const { contact } = useLoaderData();
   return (

@@ -29,12 +29,18 @@ export function openWebsocketConnection(groupId) {
     });
 
     webSocket.addEventListener("message", (messageEvent) => {
-        synchronize(messageEvent.data, messageEvent.uri);
+        var messageObject = JSON.parse(messageEvent.data);
+        if (!messageObject) {
+            console.log(`Failed to parse a message: ${messageEvent.data}`);
+        }
 
+        synchronize(messageObject.type, messageObject.uri);
+        console.log(messageObject);
+        
         webSocketEventCallback({
             isError: false,
             type: "message",
-            message: messageEvent.data
+            message: messageObject.type
         });
     });
 }

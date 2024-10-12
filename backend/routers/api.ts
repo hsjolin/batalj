@@ -61,11 +61,16 @@ function apiV1() {
 }
 
 function tryGetUriFromRequest(req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>): string | null {
-    const urlSegments = req.originalUrl
-        .split("/")
-        .filter(s => s.length > 0);
+    const url = req.originalUrl;
+    const segments = [
+        url.indexOf("contacts") + "contacts".length,
+        url.indexOf("competitions") + "competitions".length,
+        url.indexOf("groups") + "groups".length,
+        url.indexOf("events") + "events".length,
+        url.indexOf("scores") + "scores".length
+    ];
     
-    return urlSegments.at(urlSegments.length - 1) ?? null;
+    return req.originalUrl.substring(0, Math.max(...segments));
 }
 
 function tryGetEntityTypeFromRequest(req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>): EntityType | null {
