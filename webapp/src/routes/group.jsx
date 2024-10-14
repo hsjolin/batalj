@@ -5,7 +5,8 @@ import {
     redirect,
     useLoaderData,
     useNavigation,
-    useParams
+    useParams,
+    useRevalidator
 } from "react-router-dom";
 
 import {
@@ -13,7 +14,7 @@ import {
     removeWebsocketListener
 } from "../websocket";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import {
     getCompetitions,
@@ -23,10 +24,11 @@ import {
 } from "../api";
 
 export async function loader({ request, params }) {
+    console.log("Grouprouter");
     const url = new URL(request.url);
-    const initialContacts = await getContacts(params.groupId);
-    const initialCompetitions = await getCompetitions(params.groupId);
-    return { initialContacts, initialCompetitions };
+    const contacts = await getContacts(params.groupId);
+    const competitions = await getCompetitions(params.groupId);
+    return { contacts, competitions };
 }
 
 export async function action(q) {
@@ -46,22 +48,21 @@ export async function action(q) {
 }
 
 export default function Group() {
+    console.log("Group");
     const navigation = useNavigation();
     const params = useParams();
+    const revalidator = useRevalidator();
 
-    const { initialContacts, initialCompetitions } = useLoaderData();
-    const [contacts, setContacts] = useState(initialContacts);
-    const [competitions, setCompetitions] = useState(initialCompetitions);
+    const { contacts, competitions } = useLoaderData();
 
     useEffect(() => {
         const listenerRef = addWebsocketListener(params.groupId,
             async evnt => {
-                if (evnt.type === "message" && evnt.message === "contact") {
-                    setContacts(await getContacts(params.groupId));
-                }
-    
-                if (evnt.type === "message" && evnt.message === "competition") {
-                    setCompetitions(await getCompetitions(params.groupId));
+                if (evnt.type === "message" && (
+                    evnt.message === "contact" ||
+                    evnt.message === "competition")
+                ) {
+                    revalidator.revalidate();
                 }
             }
         );

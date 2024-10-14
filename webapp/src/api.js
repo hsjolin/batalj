@@ -35,10 +35,10 @@ export async function getCompetition(id) {
 }
 
 export async function createCompetition(groupId) {
-  return await create("competitions", { groupId });
+  return await create("competitions", `/groups/${groupId}/competitions`);
 }
 
-export async function updateCompetition(id, updates) {
+export async function updateCompetition(id, groupId, updates) {
   return await update("competitions", id, `/groups/${groupId}/competitions/${id}`, updates);
 }
 

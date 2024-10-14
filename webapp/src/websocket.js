@@ -1,13 +1,20 @@
 import { synchronize } from "./api";
 
 let webSocket;
-let callbacks = {};
-let indexCounter = 0;
+let callbacks = [];
+let currentCallbackKey = 0;
 
 export function openWebsocketConnection(groupId) {
+    if (webSocket && (
+        webSocket.readyState == WebSocket.CONNECTING ||
+        webSocket.readyState == WebSocket.OPEN
+    )) {
+        return;
+    }
+
     closeWebsocketConnection();
     webSocket = new WebSocket(createWebSocketUrlFromGroupId(groupId));
-
+    
     webSocket.addEventListener("error", (e) => {
         webSocketEventCallback({
             isError: true,
@@ -36,7 +43,6 @@ export function openWebsocketConnection(groupId) {
         }
 
         synchronize(messageObject.type, messageObject.uri);
-        console.log(messageObject);
 
         webSocketEventCallback({
             isError: false,
@@ -47,53 +53,49 @@ export function openWebsocketConnection(groupId) {
 }
 
 function webSocketEventCallback(context) {
-    const callbacksFunctions = Object.values(callbacks);
+    const callbacksFunctions = callbacks.map(c => c.eventFunction);
     for (let i = 0; i < callbacksFunctions.length; i++) {
         callbacksFunctions[i](context);
     }
 }
 
 export function closeWebsocketConnection() {
-    if (webSocket) {
+    if (webSocket && webSocket.readyState != WebSocket.CLOSED) {
         webSocket.close();
         webSocket = undefined;
     }
 }
 
 export function addWebsocketListener(groupId, eventFunction) {
-    const values = Object.values(callbacks);
-    const keys = Object.keys(callbacks);
+    const existingCallback = callbacks.find(c => c.eventFunction === eventFunction);
+    let key = currentCallbackKey;
+    if (!existingCallback) {
+        key = ++currentCallbackKey;
+        callbacks.push({
+            key: currentCallbackKey, 
+            eventFunction
+        });
 
-    const existingKey = keys[values.indexOf(eventFunction)];
-    const key = (indexCounter + 1).toString();
-    if (!existingKey) {
-        callbacks[key] = eventFunction;
-        indexCounter++;
-        if (Object.keys(callbacks).length == 1) {
+        if (callbacks.length == 1) {
             openWebsocketConnection(groupId);
         }
     }
 
-    return existingKey ?? key;
+    return key;
 }
 
 export function removeWebsocketListener(key) {
-    const keys = Object.keys(callbacks)
-        .filter(k => k !== key);
-
-    const callbacksCopy = { ...callbacks };
-    callbacks = {};
-
-    for (let i = 0; i < keys.length; i++) {
-        const k = keys[i];
-        callbacks[k] = callbacksCopy[k];
+    const callback = callbacks.find(c => c.key === key);
+    if (!callback) {
+        return;
     }
 
-    if (Object.keys(callbacks).length == 0) {
+    callbacks.splice(callbacks.indexOf(callback), 1);
+    if (callbacks.length == 0) {
         closeWebsocketConnection();
     }
 }
 
 function createWebSocketUrlFromGroupId(groupId) {
     return `http://localhost:3000/${groupId}`;
-}
+}   

@@ -5,6 +5,11 @@ import {
 } from "react-router-dom";
 
 import {
+  addWebsocketListener,
+  removeWebsocketListener
+} from "../websocket";
+
+import {
   useState,
   useEffect
 } from "react";
@@ -13,17 +18,14 @@ import {
   getContact
 } from "../api";
 
-import {
-  addWebsocketListener,
-  removeWebsocketListener
-} from "../websocket";
-
 export async function loader({ params }) {
+  console.log("Contactrouter");
+
   const contact = await getContact(params.contactId);
 
   if (contact) {
     document.title = `${window.documentTitle}: ${contact.first} ${contact.last}`;
-    return { initialData: contact };
+    return { contact };
   }
 
   throw new Response("", {
@@ -33,22 +35,8 @@ export async function loader({ params }) {
 }
 
 export default function Contact() {
-  const { initialData } = useLoaderData();
-  const [contact, setData] = useState(initialData);
+  const { contact } = useLoaderData();
   const params = useParams();
-
-  useEffect(() => {
-    const listenerRef = addWebsocketListener(params.groupId,
-      async evnt => {
-        if (evnt.type === "message" && evnt.message === "contact") {
-          setData(await getContact(params.contactId));
-        }
-      });
-
-    return () => {
-      removeWebsocketListener(listenerRef);
-    }
-  }, []);
 
   return (
     <div id="contact">
@@ -68,7 +56,7 @@ export default function Contact() {
               {contact.first} {contact.last}
             </>
           ) : (
-            <i>No Name</i>
+            <i>Kontakt utan namn</i>
           )}{" "}
         </h1>
 
