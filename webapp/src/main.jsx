@@ -22,7 +22,8 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import Contact, {
-  loader as contactLoader
+  loader as contactLoader,
+  action as contactAction
 } from "./routes/contact";
 import EditContact, {
   action as editAction
@@ -54,10 +55,6 @@ const router = createBrowserRouter([
   {
     errorElement: <ErrorPage />,
     children: [
-      // {
-      //   index: true,
-      //   element: <Index />
-      // },
       {
         path: "/:groupId",
         element: <Group />,
@@ -67,7 +64,8 @@ const router = createBrowserRouter([
           {
             path: "contacts/:contactId",
             element: <Contact />,
-            loader: contactLoader
+            loader: contactLoader,
+            action: contactAction
           },
           {
             path: "contacts/:contactId/edit",
@@ -76,15 +74,12 @@ const router = createBrowserRouter([
             action: editAction
           },
           {
-            path: "contacts/:contactId/destroy",
-            action: deleteAction
-          },
-          {
             path: "competitions/:competitionId/edit",
             element: <CompetitionEdit />,
             loader: editCompetitionLoader,
             action: editCompetitionAction
-          },        ]
+          }
+        ]
       },
       {
         path: "/:groupId/competitions/:competitionId",

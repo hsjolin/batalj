@@ -1,21 +1,12 @@
 import {
   Form,
-  useLoaderData,
-  useParams
+  redirect,
+  useLoaderData
 } from "react-router-dom";
 
 import {
-  addWebsocketListener,
-  removeWebsocketListener
-} from "../websocket";
-
-import {
-  useState,
-  useEffect
-} from "react";
-
-import {
-  getContact
+  getContact,
+  deleteContact
 } from "../api";
 
 export async function loader({ params }) {
@@ -34,9 +25,12 @@ export async function loader({ params }) {
   });
 }
 
+export async function action({ params }) {
+  await deleteContact(params.contactId, params.groupId);
+  return null;
+}
 export default function Contact() {
   const { contact } = useLoaderData();
-  const params = useParams();
 
   return (
     <div id="contact">
@@ -68,14 +62,13 @@ export default function Contact() {
           </Form>
           <Form
             method="post"
-            action="destroy"
             onSubmit={(event) => {
               if (!confirm("Please confirm you want to delete this record.")) {
                 event.preventDefault();
               }
             }}
           >
-            <button type="submit">Delete</button>
+            <button type="submit" name="delete-intent">Delete</button>
           </Form>
         </div>
       </div>

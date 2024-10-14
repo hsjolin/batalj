@@ -48,12 +48,12 @@ export async function action(q) {
 }
 
 export default function Group() {
-    console.log("Group");
     const navigation = useNavigation();
     const params = useParams();
     const revalidator = useRevalidator();
-
+    
     const { contacts, competitions } = useLoaderData();
+    console.log("Group", contacts.length);
 
     useEffect(() => {
         const listenerRef = addWebsocketListener(params.groupId,
