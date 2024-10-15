@@ -50,11 +50,11 @@ export async function action(q) {
 export default function Group() {
     const navigation = useNavigation();
     const params = useParams();
-    const revalidator = useRevalidator();
     
     const { contacts, competitions } = useLoaderData();
     console.log("Group", contacts.length);
-
+    
+    const revalidator = useRevalidator();
     useEffect(() => {
         const listenerRef = addWebsocketListener(params.groupId,
             async evnt => {
@@ -97,7 +97,7 @@ export default function Group() {
                         </ul>
                     ) : (
                         <p>
-                            <i>Inga tävlingar 🤷‍♂️</i>
+                            Inga tävlingar 🤷‍♂️
                         </p>
                     )}
                 </nav>
@@ -132,7 +132,7 @@ export default function Group() {
                         </ul>
                     ) : (
                         <p>
-                            <i>Inga kontakter 🤷‍♂️</i>
+                            Inga kontakter 🤷‍♂️
                         </p>
                     )}
                 </nav>

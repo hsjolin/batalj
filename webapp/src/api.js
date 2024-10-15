@@ -13,8 +13,8 @@ export async function getEvent(id) {
   return await getOne("events", id);
 }
 
-export async function createEvent(competitionId) {
-  return await create("events", { competitionId });
+export async function createEvent(params) {
+  return await create("events", `/groups/${params.groupId}/competitions/${params.competitionId}/events`);
 }
 
 export async function updateEvent(params, updates) {
@@ -23,6 +23,27 @@ export async function updateEvent(params, updates) {
 
 export async function deleteEvent(id) {
   return await deleteItem("events", id);
+}
+
+export async function getScores(eventId) {
+  return (await get("score"))
+    .filter(score => score.eventId === eventId);
+}
+
+export async function getScore(id) {
+  return await getOne("score", id);
+}
+
+export async function createScore(params, data) {
+  return await create("score", `/groups/${params.groupId}/competitions/${params.competitionId}/events/${params.eventId}/scores`, data);
+}
+
+export async function updateScore(params, updates) {
+  return await update("score", params.scoreId, `/groups/${params.groupId}/competitions/${params.competitionId}/events/${params.eventId}/scores/${params.scoreId}`, updates);
+}
+
+export async function deleteScore(id) {
+  return await deleteItem("score", id);
 }
 
 export async function getCompetitions(groupId) {

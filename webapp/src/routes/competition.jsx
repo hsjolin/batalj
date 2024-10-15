@@ -5,7 +5,8 @@ import {
     redirect,
     useLoaderData,
     useNavigation,
-    useSubmit
+    useSubmit,
+    useParams
 } from "react-router-dom";
 
 import { useEffect } from "react";
@@ -13,8 +14,9 @@ import { useEffect } from "react";
 import {
     getEvents,
     createEvent,
-    createContact,
-    getContacts
+    getContacts,
+    getCompetition,
+    getGroup
 } from "../api";
 
 export async function loader({ request, params }) {
@@ -22,70 +24,32 @@ export async function loader({ request, params }) {
     const q = url.searchParams.get("q");
     const events = await getEvents(params.competitionId, q);
     const contacts = await getContacts(params.groupId);
-    return { events, contacts, q };
+    const competition = await getCompetition(params.competitionId);
+    const group = await getGroup(params.groupId);
+
+    return { events, contacts, competition, group };
 }
 
-export async function action(q) {
-    const request = q.request;
-    const params = q.params;
-
-    console.log(q);
-
+export async function action({ request, params }) {
     const formData = await request.formData();
     const intent = formData.get("intent");
     switch (intent) {
-        case "create-contact":
-            const contact = await createContact(params.groupId);
-            return redirect(`contacts/${contact._id}/edit`);
         case "create-event":
-            const event = await createEvent(params.competitionId);
+            const event = await createEvent(params);
             return redirect(`events/${event._id}/edit`);
     }
 }
 
 export default function Competition() {
-    const { events, q, contacts } = useLoaderData();
+    const { events, contacts, competition, group } = useLoaderData();
     const navigation = useNavigation();
-    const submit = useSubmit();
-    const searching = navigation.location
-        && new URLSearchParams(navigation.location.search).has("q");
-
-    useEffect(() => {
-        document.getElementById("q").value = q;
-    }, [q]);
+    const params = useParams();
 
     return (
         <>
             <div id="sidebar">
                 <div>
-                    <Form id="search-form" role="search">
-                        <input
-                            id="q"
-                            className={searching
-                                ? "loading"
-                                : ""}
-                            aria-label="Search contacts"
-                            placeholder="Search"
-                            type="search"
-                            name="q"
-                            defaultValue={q}
-                            onChange={e => {
-                                const isFirstSearch = q == null;
-                                submit(e.currentTarget.form, {
-                                    replace: !isFirstSearch
-                                });
-                            }}
-                        />
-                        <div
-                            id="search-spinner"
-                            aria-hidden
-                            hidden={!searching}
-                        />
-                        <div
-                            className="sr-only"
-                            aria-live="polite">
-                        </div>
-                    </Form>
+                    <p><NavLink to={`/${params.groupId}`}>&lt; {group.name}</NavLink></p>
                 </div>
                 <nav>
                     {events.length ? (
@@ -109,7 +73,7 @@ export default function Competition() {
                         </ul>
                     ) : (
                         <p>
-                            <i>Inga aktiviteter 🤷‍♂️</i>
+                            Inga aktiviteter 🤷‍♂️
                         </p>
                     )}
                 </nav>
@@ -119,9 +83,7 @@ export default function Competition() {
                     </Form>
                 </div>
             </div>
-            <div
-                id="detail"
-                className={navigation.state === "loading" ? "loading" : ""}>
+            <div id="detail" className={navigation.state === "loading" ? "loading" : ""}>
                 <Outlet />
             </div>
         </>
