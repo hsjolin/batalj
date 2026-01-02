@@ -42,6 +42,9 @@ function apiV1() {
 
             next();
         })
+        .get("/health", async (_, res, __) => {
+            res.json({result: "Everything is alright ❤️"})
+        })
         .post("/groups", async (req, res, _) => {
             const group = await createGroup(req.body);
             res.json(group);

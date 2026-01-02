@@ -97,5 +97,7 @@ export function removeWebsocketListener(key) {
 }
 
 function createWebSocketUrlFromGroupId(groupId) {
-    return `http://localhost:3000/${groupId}`;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    return `${protocol}//${host}/ws/${groupId}`;
 }   

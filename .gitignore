@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# MongoDB data
+mongodb_data_dev
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -9,7 +9,7 @@ import {
 
 var _client: MongoClient | null;
 
-const uri = "mongodb://localhost:27017/?retryWrites=true";
+const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/?retryWrites=true";
 
 async function getClient(): Promise<MongoClient> {
     if (_client == null) {

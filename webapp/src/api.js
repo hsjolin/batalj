@@ -2,7 +2,7 @@ import localforage from "localforage";
 import sortBy from "sort-by";
 
 const baseUri = "/api/v1";
-const host = "http://localhost:3000";
+const host = "";
 
 export async function getEvents(competitionId) {
   return (await get("events"))
