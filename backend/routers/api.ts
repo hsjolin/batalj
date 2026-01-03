@@ -16,6 +16,7 @@ export default function api() {
         .use("/v1", apiV1())
         .use((req, res, _) => {
             const error = getError(req) ?? "Not found";
+            console.log("404", error);
             res.status(404).json({
                 Message: error
             });
@@ -27,7 +28,28 @@ export default function api() {
 function apiV1() {
     const router = Router();
     router
+        .get("/health", async (_, res, __) => {
+            res.json({result: "Everything is alright ❤️💚"})
+        })
         .use(cookieParser())
+        .post("/groups", async (req, res, _) => {
+            const { name, password } = req.body;
+
+            if (!name || !password) {
+                return res.status(400).json({ error: "Name and password required" });
+            }
+
+            const slug = await generateUniqueSlug(name);
+            const group = await createGroup({
+                name,
+                notes: '',
+                slug,
+                password: hashPassword(password),
+                inviteTokens: []
+            });
+
+            res.json(group);
+        })
         .use((req, res, next) => {
             if (["POST", "PUT", "DELETE"].includes(req.method)) {
                 res.on("finish", () => {
@@ -47,27 +69,6 @@ function apiV1() {
             next();
         })
         .use("/auth", authRouter())
-        .get("/health", async (_, res, __) => {
-            res.json({result: "Everything is alright ❤️"})
-        })
-        .post("/groups", async (req, res, _) => {
-            const { name, password } = req.body;
-
-            if (!name || !password) {
-                return res.status(400).json({ error: "Name and password required" });
-            }
-
-            const slug = await generateUniqueSlug(name);
-            const group = await createGroup({
-                name,
-                notes: '',
-                slug,
-                password: hashPassword(password),
-                inviteTokens: []
-            });
-
-            res.json(group);
-        })
         .use("/groups/:groupSlug", async (req, res, next) => {
             const group = await getGroupBySlug(req.params.groupSlug);
             if (group) {

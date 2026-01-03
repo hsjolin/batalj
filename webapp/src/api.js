@@ -2,7 +2,7 @@ import localforage from "localforage";
 import sortBy from "sort-by";
 
 const baseUri = "/api/v1";
-const host = "";
+const host = "http://localhost:3000";
 
 // ============================================================================
 // Authentication Functions
