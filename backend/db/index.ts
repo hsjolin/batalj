@@ -3,6 +3,7 @@ import {
     Competition,
     Contact,
     Group,
+    Activity,
     Event as EventModel,
     Score
 } from "../models";
@@ -314,6 +315,14 @@ export async function deleteEvent(eventId: string): Promise<void> {
     });
 }
 
+// Activity aliases (new naming convention)
+export const getActivities = getEvents;
+export const getActivityById = getEventById;
+export const updateActivity = updateEvent;
+export const createActivity = createEvent;
+export const deleteActivity = deleteEvent;
+export const getActivityResults = getEventScores;
+
 export async function getGroupById(groupId: string): Promise<Group | null> {
     return await exec(async db => {
         if (groupId.length != 24) {
@@ -375,6 +384,255 @@ export async function deleteGroup(groupId: string): Promise<void> {
     });
 }
 
+// Slug management functions
+export async function getGroupBySlug(slug: string): Promise<Group | null> {
+    return await exec(async db => {
+        const result = await db.collection("groups").findOne({ slug: slug });
+        return result as Group;
+    });
+}
+
+export async function isSlugAvailable(slug: string): Promise<boolean> {
+    const existing = await getGroupBySlug(slug);
+    return existing === null;
+}
+
+export async function generateUniqueSlug(baseSlug: string): Promise<string> {
+    // Normalize slug: lowercase, replace spaces with hyphens, remove special chars
+    let slug = baseSlug
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[åä]/g, 'a')
+        .replace(/ö/g, 'o')
+        .replace(/[^a-z0-9-]/g, '');
+
+    if (await isSlugAvailable(slug)) {
+        return slug;
+    }
+
+    // Slug taken, add incrementing number
+    let counter = 2;
+    while (true) {
+        const newSlug = `${slug}${counter}`;
+        if (await isSlugAvailable(newSlug)) {
+            return newSlug;
+        }
+        counter++;
+    }
+}
+
+// Invite token functions
+export async function addInviteToken(groupId: string, token: string, email: string): Promise<boolean> {
+    return await exec(async db => {
+        if (groupId.length != 24) {
+            return false;
+        }
+
+        const result = await db.collection("groups").updateOne(
+            { _id: new ObjectId(groupId) },
+            {
+                $push: {
+                    inviteTokens: {
+                        token,
+                        email,
+                        createdAt: new Date()
+                    }
+                } as any
+            }
+        );
+
+        return result.acknowledged && result.modifiedCount === 1;
+    }) ?? false;
+}
+
+export async function getInviteToken(token: string): Promise<{ group: Group; email: string } | null> {
+    return await exec(async db => {
+        const result = await db.collection("groups").findOne({
+            "inviteTokens.token": token,
+            "inviteTokens.usedAt": { $exists: false }
+        });
+
+        if (!result) {
+            return null;
+        }
+
+        const group = result as Group;
+        const inviteToken = group.inviteTokens?.find(t => t.token === token);
+
+        if (!inviteToken) {
+            return null;
+        }
+
+        return { group, email: inviteToken.email };
+    });
+}
+
+export async function markInviteTokenUsed(token: string): Promise<boolean> {
+    return await exec(async db => {
+        const result = await db.collection("groups").updateOne(
+            { "inviteTokens.token": token },
+            { $set: { "inviteTokens.$.usedAt": new Date() } }
+        );
+
+        return result.acknowledged && result.modifiedCount === 1;
+    }) ?? false;
+}
+
+// Statistics interfaces and functions
+export interface ActivityResult {
+    activityId: ObjectId;
+    activityName: string;
+    placement: number;
+    points: number;
+    resultValue: number;
+}
+
+export interface ContactStatistics {
+    contactId: ObjectId;
+    contactName: string;
+    totalPoints: number;
+    activityResults: ActivityResult[];
+}
+
+function getPointsForPlacement(placement: number): number {
+    const pointsMap: { [key: number]: number } = {
+        1: 10,
+        2: 7,
+        3: 5,
+        4: 3,
+        5: 1
+    };
+    return pointsMap[placement] || 0;
+}
+
+export async function getCompetitionStatistics(competitionId: string): Promise<ContactStatistics[]> {
+    return await exec(async db => {
+        if (competitionId.length != 24) {
+            return [];
+        }
+
+        // Get all activities for this competition
+        const activities = await db.collection("events")
+            .find({ competitionId: new ObjectId(competitionId) })
+            .toArray();
+
+        const contactStatsMap = new Map<string, ContactStatistics>();
+
+        // Process each activity
+        for (const activity of activities) {
+            const results = await db.collection("scores")
+                .find({ eventId: activity._id })
+                .toArray();
+
+            if (results.length === 0) continue;
+
+            // Calculate result values based on activity type
+            const resultsWithValues = results.map((r: any) => {
+                let value = r.result;
+                if (activity.activityType === 'TIME_MATCHING' && r.time1 && r.time2) {
+                    value = Math.abs(r.time1 - r.time2);
+                }
+                return { ...r, calculatedValue: value };
+            });
+
+            // Sort based on activity type
+            const isLowerBetter = activity.activityType === 'TIME_SHORT_BETTER' ||
+                activity.activityType === 'POINTS_LOW_BETTER' ||
+                activity.activityType === 'TIME_MATCHING';
+
+            resultsWithValues.sort((a, b) => {
+                return isLowerBetter ?
+                    a.calculatedValue - b.calculatedValue :
+                    b.calculatedValue - a.calculatedValue;
+            });
+
+            // Assign placements (handle ties)
+            let currentPlacement = 1;
+            for (let i = 0; i < resultsWithValues.length; i++) {
+                const result = resultsWithValues[i];
+
+                // Check if this is a tie with previous result
+                if (i > 0 && result.calculatedValue === resultsWithValues[i - 1].calculatedValue) {
+                    // Same placement as previous
+                    (result as any).placement = (resultsWithValues[i - 1] as any).placement;
+                } else {
+                    (result as any).placement = currentPlacement;
+                }
+
+                currentPlacement = i + 2; // Next placement accounts for ties
+            }
+
+            // Award points and aggregate
+            for (const result of resultsWithValues) {
+                const contactId = result.contactId.toString();
+                const points = getPointsForPlacement((result as any).placement);
+
+                if (!contactStatsMap.has(contactId)) {
+                    // Get contact name
+                    const contact = await db.collection("contacts").findOne({ _id: result.contactId });
+                    contactStatsMap.set(contactId, {
+                        contactId: result.contactId,
+                        contactName: contact ? `${contact.first} ${contact.last}` : 'Unknown',
+                        totalPoints: 0,
+                        activityResults: []
+                    });
+                }
+
+                const stats = contactStatsMap.get(contactId)!;
+                stats.totalPoints += points;
+                stats.activityResults.push({
+                    activityId: activity._id,
+                    activityName: activity.name,
+                    placement: (result as any).placement,
+                    points,
+                    resultValue: result.calculatedValue
+                });
+            }
+        }
+
+        return Array.from(contactStatsMap.values());
+    }) ?? [];
+}
+
+export async function getGroupStatistics(groupId: string): Promise<ContactStatistics[]> {
+    return await exec(async db => {
+        if (groupId.length != 24) {
+            return [];
+        }
+
+        // Get all competitions for this group
+        const competitions = await db.collection("competitions")
+            .find({ groupId: new ObjectId(groupId) })
+            .toArray();
+
+        const contactStatsMap = new Map<string, ContactStatistics>();
+
+        // Aggregate statistics from all competitions
+        for (const competition of competitions) {
+            const compStats = await getCompetitionStatistics(competition._id.toString());
+
+            for (const stats of compStats) {
+                const contactId = stats.contactId.toString();
+
+                if (!contactStatsMap.has(contactId)) {
+                    contactStatsMap.set(contactId, {
+                        contactId: stats.contactId,
+                        contactName: stats.contactName,
+                        totalPoints: 0,
+                        activityResults: []
+                    });
+                }
+
+                const aggregated = contactStatsMap.get(contactId)!;
+                aggregated.totalPoints += stats.totalPoints;
+                aggregated.activityResults.push(...stats.activityResults);
+            }
+        }
+
+        return Array.from(contactStatsMap.values());
+    }) ?? [];
+}
+
 async function configure(_client: MongoClient) {
     const db = _client.db("batalj");
     const collections = (await db.collections())
@@ -396,24 +654,7 @@ async function configure(_client: MongoClient) {
         await db.createCollection("scores");
     }
 
-    // await db.command({
-    //     create: "event-scores",
-    //     viewOn: "events",
-    //     pipeline: [
-    //         {
-    //             $lookup: {
-    //                 from: "scores",
-    //                 localField: "_id",
-    //                 foreignField: "eventId",
-    //                 as: "eventScores"
-    //             },
-    //             $project: {
-    //                 _id: 1,
-    //                 name: 1,
-    //                 notes: 1,
-    //                 scores: "$eventScores.scores"
-    //             }
-    //         }
-    //     ]
-    // });
+    // Create indexes for new fields
+    await db.collection("groups").createIndex({ slug: 1 }, { unique: true });
+    await db.collection("groups").createIndex({ "inviteTokens.token": 1 });
 }

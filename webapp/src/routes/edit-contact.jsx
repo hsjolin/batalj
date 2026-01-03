@@ -9,16 +9,16 @@ import { updateContact } from "../api";
 export async function action({ request, params }) {
     const formData = await request.formData();
     const updates = Object.fromEntries(formData);
-    updates.avatar = updates.avatar 
+    updates.avatar = updates.avatar
         ? updates.avatar
         : `https://robohash.org/${params.contactId}.png?size=200x200`;
 
     await updateContact(
         params.contactId,
-        params.groupId,
+        params.groupSlug,
         updates);
 
-    return redirect(`/${params.groupId}/contacts/${params.contactId}`);
+    return redirect(`/group/${params.groupSlug}/contacts/${params.contactId}`);
 }
 
 export default function EditContact() {

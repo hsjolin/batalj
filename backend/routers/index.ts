@@ -24,6 +24,7 @@ export type EntityType =
     "competition" |
     "contact" |
     "event" |
+    "activity" |
     "group" |
     "score";
 

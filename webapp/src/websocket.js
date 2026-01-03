@@ -4,7 +4,7 @@ let webSocket;
 let callbacks = [];
 let currentCallbackKey = 0;
 
-export function openWebsocketConnection(groupId) {
+export function openWebsocketConnection(groupSlug) {
     if (webSocket && (
         webSocket.readyState == WebSocket.CONNECTING ||
         webSocket.readyState == WebSocket.OPEN
@@ -13,7 +13,7 @@ export function openWebsocketConnection(groupId) {
     }
 
     closeWebsocketConnection();
-    webSocket = new WebSocket(createWebSocketUrlFromGroupId(groupId));
+    webSocket = new WebSocket(createWebSocketUrlFromGroupSlug(groupSlug));
     
     webSocket.addEventListener("error", (e) => {
         webSocketEventCallback({
@@ -42,12 +42,14 @@ export function openWebsocketConnection(groupId) {
             console.log(`Failed to parse a message: ${messageEvent.data}`);
         }
 
-        synchronize(messageObject.type, messageObject.uri);
+        // Map "event" to "activity" for backward compatibility
+        const entityType = messageObject.type === "event" ? "activity" : messageObject.type;
+        synchronize(entityType === "activity" ? "activities" : entityType, messageObject.uri);
 
         webSocketEventCallback({
             isError: false,
             type: "message",
-            message: messageObject.type
+            message: entityType
         });
     });
 }
@@ -66,18 +68,18 @@ export function closeWebsocketConnection() {
     }
 }
 
-export function addWebsocketListener(groupId, eventFunction) {
+export function addWebsocketListener(groupSlug, eventFunction) {
     const existingCallback = callbacks.find(c => c.eventFunction === eventFunction);
     let key = currentCallbackKey;
     if (!existingCallback) {
         key = ++currentCallbackKey;
         callbacks.push({
-            key: currentCallbackKey, 
+            key: currentCallbackKey,
             eventFunction
         });
 
         if (callbacks.length == 1) {
-            openWebsocketConnection(groupId);
+            openWebsocketConnection(groupSlug);
         }
     }
 
@@ -96,8 +98,8 @@ export function removeWebsocketListener(key) {
     }
 }
 
-function createWebSocketUrlFromGroupId(groupId) {
+function createWebSocketUrlFromGroupSlug(groupSlug) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    return `${protocol}//${host}/ws/${groupId}`;
+    return `${protocol}//${host}/ws/${groupSlug}`;
 }   

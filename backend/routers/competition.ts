@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { getCompetition } from "../utils";
 import {
-    deleteCompetition, 
-    updateCompetition, 
+    deleteCompetition,
+    updateCompetition,
+    getCompetitionStatistics
 } from "../db";
 import eventsRouter from "./events";
 
@@ -21,7 +22,13 @@ export default function competitionRouter(): Router {
             const result = await deleteCompetition(getCompetition(req)._id!.toString());
             res.json(result);
         })
-        .use("/events", eventsRouter());
+        .get("/statistics", async (req, res, _) => {
+            const competition = getCompetition(req);
+            const stats = await getCompetitionStatistics(competition._id!.toString());
+            res.json(stats);
+        })
+        .use("/events", eventsRouter())
+        .use("/activities", eventsRouter()); // Support both paths for backward compatibility
 
     return router;
 }

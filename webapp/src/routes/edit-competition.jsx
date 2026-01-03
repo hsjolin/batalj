@@ -12,9 +12,9 @@ import {
 export async function action({ request, params }) {
     const formData = await request.formData();
     const updates = Object.fromEntries(formData);
-    await updateCompetition(params.competitionId, params.groupId, updates);
+    await updateCompetition(params.competitionId, params.groupSlug, updates);
 
-    return redirect(`/${params.groupId}`);
+    return redirect(`/group/${params.groupSlug}`);
 }
 
 export async function loader({ params }) {

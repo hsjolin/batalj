@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { Competition, Contact, Event, Group } from "../models";
+import { Competition, Contact, Event, Activity, Group } from "../models";
 
 export function getGroup(req: Request): Group {
     return get<Group>("Group", req);
@@ -32,6 +32,10 @@ export function getEvent(req: Request): Event {
 export function setEvent(req: Request, event: Event): void {
     set("Event", event, req);
 }
+
+// Activity aliases (new naming convention)
+export const getActivity = getEvent;
+export const setActivity = setEvent;
 
 // export function getEntityType(req: Request): EntityType {
 //     return get<EntityType>("EntityType", req);

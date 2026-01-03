@@ -26,7 +26,7 @@ export async function loader({ params }) {
 }
 
 export async function action({ params }) {
-  await deleteContact(params.contactId, params.groupId);
+  await deleteContact(params.contactId, params.groupSlug);
   return null;
 }
 export default function Contact() {

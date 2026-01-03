@@ -1,10 +1,13 @@
 import { Router } from "express";
+import cookieParser from "cookie-parser";
 import groupRouter from "./group";
-import { createGroup, getGroupById } from "../db";
+import authRouter from "./auth";
+import { createGroup, getGroupBySlug, generateUniqueSlug } from "../db";
 import { getError, getGroup, setError, setGroup } from "../utils";
 import { Request, ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
 import { EntityType, onDataUpdated } from ".";
+import { hashPassword } from "../middleware/auth";
 
 export default function api() {
     const router = Router();
@@ -24,6 +27,7 @@ export default function api() {
 function apiV1() {
     const router = Router();
     router
+        .use(cookieParser())
         .use((req, res, next) => {
             if (["POST", "PUT", "DELETE"].includes(req.method)) {
                 res.on("finish", () => {
@@ -42,21 +46,36 @@ function apiV1() {
 
             next();
         })
+        .use("/auth", authRouter())
         .get("/health", async (_, res, __) => {
             res.json({result: "Everything is alright ❤️"})
         })
         .post("/groups", async (req, res, _) => {
-            const group = await createGroup(req.body);
+            const { name, password } = req.body;
+
+            if (!name || !password) {
+                return res.status(400).json({ error: "Name and password required" });
+            }
+
+            const slug = await generateUniqueSlug(name);
+            const group = await createGroup({
+                name,
+                notes: '',
+                slug,
+                password: hashPassword(password),
+                inviteTokens: []
+            });
+
             res.json(group);
         })
-        .use("/groups/:groupId", async (req, res, next) => {
-            const group = await getGroupById(req.params.groupId);
+        .use("/groups/:groupSlug", async (req, res, next) => {
+            const group = await getGroupBySlug(req.params.groupSlug);
             if (group) {
                 setGroup(req, group);
                 return groupRouter()(req, res, next);
             }
 
-            setError(req, `Group with id ${req.params.groupId} was not found`);
+            setError(req, `Group with slug ${req.params.groupSlug} was not found`);
             next();
         });
 
@@ -70,9 +89,10 @@ function tryGetUriFromRequest(req: Request<ParamsDictionary, any, any, ParsedQs,
         url.indexOf("competitions") + "competitions".length,
         url.indexOf("groups") + "groups".length,
         url.indexOf("events") + "events".length,
+        url.indexOf("activities") + "activities".length,
         url.indexOf("scores") + "scores".length
     ];
-    
+
     return req.originalUrl.substring(0, Math.max(...segments));
 }
 
@@ -98,7 +118,8 @@ function tryGetEntityTypeFromRequest(req: Request<ParamsDictionary, any, any, Pa
         case "contacts":
             return "contact";
         case "events":
-            return "event";
+        case "activities":
+            return "activity";
         case "scores":
             return "score";
         default:

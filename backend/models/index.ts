@@ -1,5 +1,12 @@
 import { ObjectId } from "mongodb";
 
+export interface InviteToken {
+    token: string;
+    email: string;
+    createdAt: Date;
+    usedAt?: Date;
+}
+
 export interface Contact {
     _id?: ObjectId;
     groupId: ObjectId;
@@ -7,12 +14,16 @@ export interface Contact {
     last: string;
     notes: string;
     avatar: string;
+    email?: string;
 }
 
 export interface Group {
     _id?: ObjectId;
     name: string;
     notes: string;
+    slug: string;
+    password: string;
+    inviteTokens?: InviteToken[];
 }
 
 export interface Competition {
@@ -22,21 +33,31 @@ export interface Competition {
     notes: string;
 }
 
-export interface Event {
+export interface Activity {
     _id?: ObjectId;
     competitionId: ObjectId;
     name: string;
     notes: string;
-    resultType: ResultType;
-    highResultIsBetter: Boolean;
+    activityType: ActivityType;
 }
 
-export type ResultType = "time" | "points";
+export type ActivityType =
+    | "TIME_LONG_BETTER"
+    | "TIME_SHORT_BETTER"
+    | "TIME_MATCHING"
+    | "POINTS_HIGH_BETTER"
+    | "POINTS_LOW_BETTER";
 
 export interface Score {
     _id?: ObjectId;
     contactId: ObjectId;
     eventId: ObjectId;
     score: number;
-    result: number; 
+    result: number;
+    time1?: number;
+    time2?: number;
 }
+
+// Legacy alias for backwards compatibility
+export type Event = Activity;
+export type ResultType = ActivityType;

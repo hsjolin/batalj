@@ -1,7 +1,7 @@
 import { WebSocketServer } from "ws";
 import http from "http";
 import { setDataUpdatedListener } from "../routers";
-import { getGroupById } from "../db";
+import { getGroupBySlug } from "../db";
 
 export default class WSServer {
     wss = new WebSocketServer({ noServer: true });
@@ -15,14 +15,14 @@ export default class WSServer {
         server.on("upgrade", async (req, socket, head) => {
             socket.on("error", onSocketPreError);
 
-            const groupId = req.url?.replace("/", "");
-            if (!groupId) {
-                return new Error("Expected group id in url");
+            const groupSlug = req.url?.replace("/", "");
+            if (!groupSlug) {
+                return new Error("Expected group slug in url");
             }
 
-            const group = await getGroupById(groupId);
+            const group = await getGroupBySlug(groupSlug);
             if (!group) {
-                return new Error(`Unable to find group with id ${groupId}`);
+                return new Error(`Unable to find group with slug ${groupSlug}`);
             }
 
             this.wss.handleUpgrade(req, socket, head, (client) => {

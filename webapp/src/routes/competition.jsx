@@ -12,8 +12,8 @@ import {
 import { useEffect } from "react";
 
 import {
-    getEvents,
-    createEvent,
+    getActivities,
+    createActivity,
     getContacts,
     getCompetition,
     getGroup
@@ -22,26 +22,26 @@ import {
 export async function loader({ request, params }) {
     const url = new URL(request.url);
     const q = url.searchParams.get("q");
-    const events = await getEvents(params.competitionId, q);
-    const contacts = await getContacts(params.groupId);
+    const activities = await getActivities(params.competitionId, q);
+    const contacts = await getContacts(params.groupSlug);
     const competition = await getCompetition(params.competitionId);
-    const group = await getGroup(params.groupId);
+    const group = await getGroup(params.groupSlug);
 
-    return { events, contacts, competition, group };
+    return { activities, contacts, competition, group };
 }
 
 export async function action({ request, params }) {
     const formData = await request.formData();
     const intent = formData.get("intent");
     switch (intent) {
-        case "create-event":
-            const event = await createEvent(params);
-            return redirect(`events/${event._id}/edit`);
+        case "create-activity":
+            const activity = await createActivity(params);
+            return redirect(`activities/${activity._id}/edit`);
     }
 }
 
 export default function Competition() {
-    const { events, contacts, competition, group } = useLoaderData();
+    const { activities, contacts, competition, group } = useLoaderData();
     const navigation = useNavigation();
     const params = useParams();
 
@@ -49,23 +49,25 @@ export default function Competition() {
         <>
             <div id="sidebar">
                 <div>
-                    <p><NavLink to={`/${params.groupId}`}>&lt; {group.name}</NavLink></p>
+                    <p><NavLink to={`/group/${params.groupSlug}`}>&lt; {group.name}</NavLink></p>
+                    <h2>{competition.name}</h2>
+                    <NavLink to="statistics">Tävlingsstatistik</NavLink>
                 </div>
                 <nav>
-                    {events.length ? (
+                    {activities.length ? (
                         <ul>
-                            {events.map(event => (
-                                <li key={event._id}>
+                            {activities.map(activity => (
+                                <li key={activity._id}>
                                     <NavLink
-                                        to={`events/${event._id}`}
+                                        to={`activities/${activity._id}`}
                                         className={({ isActive, isPending }) =>
                                             isActive
                                                 ? "active"
                                                 : isPending
                                                     ? "pending"
                                                     : ""}>
-                                        {event.name
-                                            ? <>{event.name}</>
+                                        {activity.name
+                                            ? <>{activity.name}</>
                                             : <i>Aktivitet utan namn</i>}{" "}
                                     </NavLink>
                                 </li>
@@ -73,13 +75,13 @@ export default function Competition() {
                         </ul>
                     ) : (
                         <p>
-                            Inga aktiviteter 🤷‍♂️
+                            Inga aktiviteter
                         </p>
                     )}
                 </nav>
                 <div>
                     <Form method="post">
-                        <button type="submit" name="intent" value="create-event">Ny aktivitet</button>
+                        <button type="submit" name="intent" value="create-activity">Ny aktivitet</button>
                     </Form>
                 </div>
             </div>

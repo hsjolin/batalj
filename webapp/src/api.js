@@ -4,72 +4,180 @@ import sortBy from "sort-by";
 const baseUri = "/api/v1";
 const host = "";
 
-export async function getEvents(competitionId) {
-  return (await get("events"))
-    .filter(event => event.competitionId === competitionId);
+// ============================================================================
+// Authentication Functions
+// ============================================================================
+
+export async function login(groupSlug, password) {
+  const res = await fetch(`${host}${baseUri}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ groupSlug, password }),
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function getEvent(id) {
-  return await getOne("events", id);
+export async function switchContact(contactId) {
+  const res = await fetch(`${host}${baseUri}/auth/switch-contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ contactId }),
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function createEvent(params) {
-  return await create("events", `/groups/${params.groupId}/competitions/${params.competitionId}/events`);
+export async function verifyToken(token) {
+  const res = await fetch(`${host}${baseUri}/auth/verify-token/${token}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function updateEvent(params, updates) {
-  return await update("events", params.eventId, `/groups/${params.groupId}/competitions/${params.competitionId}/events/${params.eventId}`, updates);
+export async function logout() {
+  const res = await fetch(`${host}${baseUri}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function deleteEvent(id) {
-  return await deleteItem("events", id);
+export async function getCurrentUser() {
+  const res = await fetch(`${host}${baseUri}/auth/me`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function getScores(eventId) {
-  return (await get("score"))
-    .filter(score => score.eventId === eventId);
+// ============================================================================
+// Group Functions
+// ============================================================================
+
+export async function getGroup(groupSlug) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function getScore(id) {
-  return await getOne("score", id);
+export async function createGroup(data) {
+  const res = await fetch(`${host}${baseUri}/groups`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function createScore(params, data) {
-  return await create("score", `/groups/${params.groupId}/competitions/${params.competitionId}/events/${params.eventId}/scores`, data);
+export async function updateGroup(groupSlug, updates) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(updates),
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function updateScore(params, updates) {
-  return await update("score", params.scoreId, `/groups/${params.groupId}/competitions/${params.competitionId}/events/${params.eventId}/scores/${params.scoreId}`, updates);
+export async function getGroups() {
+  return await get("groups");
 }
 
-export async function deleteScore(id) {
-  return await deleteItem("score", id);
+export async function sendInvite(groupSlug, email) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/invite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email }),
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function getCompetitions(groupId) {
+export async function getGroupStatistics(groupSlug) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/statistics`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
+}
+
+// ============================================================================
+// Contact Functions
+// ============================================================================
+
+export async function getContacts(groupSlug) {
+  return (await get("contact"))
+    .filter(contact => contact.groupId === groupSlug);
+}
+
+export async function createContact(groupSlug) {
+  return await create("contact", `/groups/${groupSlug}/contacts`);
+}
+
+export async function getContact(id) {
+  return await getOne("contact", id);
+}
+
+export async function updateContact(id, groupSlug, updates) {
+  return await update("contact", id, `/groups/${groupSlug}/contacts/${id}`, updates);
+}
+
+export async function deleteContact(id, groupSlug) {
+  return await deleteItem(`/groups/${groupSlug}/contacts/${id}`);
+}
+
+// ============================================================================
+// Competition Functions
+// ============================================================================
+
+export async function getCompetitions(groupSlug) {
   return (await get("competitions"))
-    .filter(competition => competition.groupId === groupId);
+    .filter(competition => competition.groupId === groupSlug);
 }
 
 export async function getCompetition(id) {
   return await getOne("competitions", id);
 }
 
-export async function createCompetition(groupId) {
-  return await create("competitions", `/groups/${groupId}/competitions`);
+export async function createCompetition(groupSlug) {
+  return await create("competitions", `/groups/${groupSlug}/competitions`);
 }
 
-export async function updateCompetition(id, groupId, updates) {
-  return await update("competitions", id, `/groups/${groupId}/competitions/${id}`, updates);
+export async function updateCompetition(id, groupSlug, updates) {
+  return await update("competitions", id, `/groups/${groupSlug}/competitions/${id}`, updates);
 }
 
 export async function deleteCompetition(id) {
   if (await deleteItem("competitions", id)) {
-    let events = await getEvents().filter(event => event.competitionId === id);
-    for (let i = 0; i < events.length; i++) {
-      await deleteEvent(events[i]._id);
+    let activities = (await get("activities")).filter(activity => activity.competitionId === id);
+    for (let i = 0; i < activities.length; i++) {
+      await deleteActivity(activities[i]._id);
     }
 
+    let competitions = await get("competitions");
+    const index = competitions.findIndex(c => c._id === id);
     competitions.splice(index, 1);
     await set("competitions", competitions);
     return true;
@@ -78,42 +186,75 @@ export async function deleteCompetition(id) {
   return false;
 }
 
-export async function getGroup(id) {
-  return await getOne("groups", id);
+export async function getCompetitionStatistics(groupSlug, competitionId) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/competitions/${competitionId}/statistics`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function createGroup() {
-  return await create("groups", "/groups");
+// ============================================================================
+// Activity Functions (renamed from Event)
+// ============================================================================
+
+export async function getActivities(competitionId) {
+  return (await get("activities"))
+    .filter(activity => activity.competitionId === competitionId);
 }
 
-export async function updateGroup(id, updates) {
-  return await update("groups", id, `/groups/${id}`, updates);
+export async function getActivity(id) {
+  return await getOne("activities", id);
 }
 
-export async function getGroups() {
-  return await get("groups");
+export async function createActivity(params) {
+  return await create("activities", `/groups/${params.groupSlug}/competitions/${params.competitionId}/activities`);
 }
 
-export async function getContacts(groupId) {
-  return (await get("contact"))
-    .filter(contact => contact.groupId === groupId);
+export async function updateActivity(params, updates) {
+  return await update("activities", params.activityId, `/groups/${params.groupSlug}/competitions/${params.competitionId}/activities/${params.activityId}`, updates);
 }
 
-export async function createContact(groupId) {
-  return await create("contact", `/groups/${groupId}/contacts`);
+export async function deleteActivity(id) {
+  return await deleteItem("activities", id);
 }
 
-export async function getContact(id) {
-  return await getOne("contact", id);
+// Backward compatibility aliases
+export const getEvents = getActivities;
+export const getEvent = getActivity;
+export const createEvent = createActivity;
+export const updateEvent = updateActivity;
+export const deleteEvent = deleteActivity;
+
+// ============================================================================
+// Score/Result Functions
+// ============================================================================
+
+export async function getScores(activityId) {
+  return (await get("score"))
+    .filter(score => score.eventId === activityId);
 }
 
-export async function updateContact(id, groupId, updates) {
-  return await update("contact", id, `/groups/${groupId}/contacts/${id}`, updates);
+export async function getScore(id) {
+  return await getOne("score", id);
 }
 
-export async function deleteContact(id, groupId) {
-  return await deleteItem(`/groups/${groupId}/contacts/${id}`);
+export async function createScore(params, data) {
+  return await create("score", `/groups/${params.groupSlug}/competitions/${params.competitionId}/activities/${params.activityId}/scores`, data);
 }
+
+export async function updateScore(params, updates) {
+  return await update("score", params.scoreId, `/groups/${params.groupSlug}/competitions/${params.competitionId}/activities/${params.activityId}/scores/${params.scoreId}`, updates);
+}
+
+export async function deleteScore(id) {
+  return await deleteItem("score", id);
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
 async function getOne(key, id) {
   return (await get(key))
@@ -138,7 +279,8 @@ export async function synchronize(key, uri) {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-    }
+    },
+    credentials: "include",
   });
 
   assureResponse(res);
@@ -153,6 +295,7 @@ async function create(key, uri, extra) {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(extra ?? {})
   });
 
@@ -177,6 +320,7 @@ async function update(key, id, uri, updates) {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(updates)
   });
 
@@ -193,7 +337,8 @@ async function deleteItem(uri) {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-    }
+    },
+    credentials: "include",
   });
 
   assureResponse(res);

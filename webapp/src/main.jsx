@@ -9,14 +9,19 @@ import CompetitionEdit, {
   loader as editCompetitionLoader,
   action as editCompetitionAction
 } from "./routes/edit-competition";
-import Root, {
-  loader as rootLoader,
-  action as rootAction
-} from "./routes/root";
+import Login, {
+  action as loginAction
+} from "./routes/login";
 import Group, {
   loader as groupLoader,
   action as groupAction
 } from "./routes/group";
+import GroupStatistics, {
+  loader as groupStatisticsLoader
+} from "./routes/group-statistics";
+import CompetitionStatistics, {
+  loader as competitionStatisticsLoader
+} from "./routes/competition-statistics";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -28,39 +33,43 @@ import Contact, {
 import EditContact, {
   action as editAction
 } from "./routes/edit-contact";
-import Event, {
-  loader as eventLoader,
-  action as eventAction
-} from "./routes/event";
-import EditEvent, {
-  action as editEventAction
-} from "./routes/edit-event";
+import Activity, {
+  loader as activityLoader,
+  action as activityAction
+} from "./routes/activity";
+import EditActivity, {
+  action as editActivityAction
+} from "./routes/edit-activity";
 import {
   action as deleteAction
 } from "./routes/destroy-contact"
 import {
-  action as deleteEventAction
-} from "./routes/destroy-event"
+  action as deleteActivityAction
+} from "./routes/destroy-activity"
 
 import ErrorPage from "./error-page";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Root />,
+    element: <Login />,
     errorElement: <ErrorPage />,
-    action: rootAction,
-    loader: rootLoader
+    action: loginAction
   },
   {
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "/:groupId",
+        path: "/group/:groupSlug",
         element: <Group />,
         loader: groupLoader,
         action: groupAction,
         children: [
+          {
+            path: "statistics",
+            element: <GroupStatistics />,
+            loader: groupStatisticsLoader
+          },
           {
             path: "contacts/:contactId",
             element: <Contact />,
@@ -74,6 +83,10 @@ const router = createBrowserRouter([
             action: editAction
           },
           {
+            path: "contacts/:contactId/destroy",
+            action: deleteAction
+          },
+          {
             path: "competitions/:competitionId/edit",
             element: <CompetitionEdit />,
             loader: editCompetitionLoader,
@@ -82,26 +95,31 @@ const router = createBrowserRouter([
         ]
       },
       {
-        path: "/:groupId/competitions/:competitionId",
+        path: "/group/:groupSlug/competitions/:competitionId",
         element: <Competition />,
         loader: competitionLoader,
         action: competitionAction,
         children: [
           {
-            path: "events/:eventId",
-            element: <Event />,
-            action: eventAction,
-            loader: eventLoader
+            path: "statistics",
+            element: <CompetitionStatistics />,
+            loader: competitionStatisticsLoader
           },
           {
-            path: "events/:eventId/edit",
-            element: <EditEvent />,
-            action: editEventAction,
-            loader: eventLoader
+            path: "activities/:activityId",
+            element: <Activity />,
+            action: activityAction,
+            loader: activityLoader
           },
           {
-            path: "events/:eventId/destroy",
-            action: deleteEventAction
+            path: "activities/:activityId/edit",
+            element: <EditActivity />,
+            action: editActivityAction,
+            loader: activityLoader
+          },
+          {
+            path: "activities/:activityId/destroy",
+            action: deleteActivityAction
           }
         ]
       },
