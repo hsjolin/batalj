@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getGroupBySlug, getContacts, getContactById, getInviteToken, markInviteTokenUsed } from "../db";
-import { hashPassword, verifyPassword } from "../middleware/auth";
+import { verifyPassword } from "../middleware/auth";
 
 export default function authRouter(): Router {
     const router = Router();
@@ -8,11 +8,10 @@ export default function authRouter(): Router {
     // POST /api/v1/auth/login
     router.post("/login", async (req, res) => {
         const { groupSlug, password } = req.body;
-
         if (!groupSlug || !password) {
             return res.status(400).json({ error: "Group slug and password required" });
         }
-
+        
         const group = await getGroupBySlug(groupSlug);
         if (!group || !verifyPassword(password, group.password)) {
             return res.status(401).json({ error: "Invalid group ID or password" });

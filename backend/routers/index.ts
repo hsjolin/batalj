@@ -29,16 +29,30 @@ export type EntityType =
     "score";
 
 export function configure(app: Application) {
+    const allowedOrigins = process.env.NODE_ENV === 'production'
+        ? ['https://bk.familjensjolin.com']
+        : ['http://localhost:5173', 'http://localhost:3000'];
+
     app
         .get("/", (_, res, __) => {
             res.sendFile(resolve(__dirname, "../index.html"));
         })
         .use(express.static("public"))
         .use(json())
-        .use((req, res, next)=> {
-            res.header('Access-Control-Allow-Origin', '*');
-            res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE');
-            res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        .use((req, res, next) => {
+            const origin = req.headers.origin;
+            if (origin && allowedOrigins.includes(origin)) {
+                res.header('Access-Control-Allow-Origin', origin);
+                res.header('Access-Control-Allow-Credentials', 'true');
+            }
+            res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+            res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+
+            // Handle preflight requests
+            if (req.method === 'OPTIONS') {
+                return res.sendStatus(200);
+            }
+
             next();
         })
         .use("/api", api());

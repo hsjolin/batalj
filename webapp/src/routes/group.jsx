@@ -29,10 +29,9 @@ import {
 
 export async function loader({ request, params }) {
     console.log("Grouprouter");
-    const url = new URL(request.url);
-    const contacts = await getContacts(params.groupSlug);
-    const competitions = await getCompetitions(params.groupSlug);
     const group = await getGroup(params.groupSlug);
+    const contacts = await getContacts(group._id.toString());
+    const competitions = await getCompetitions(group._id.toString());
     const currentUser = await getCurrentUser();
     return { contacts, competitions, group, currentUser };
 }

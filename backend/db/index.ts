@@ -46,7 +46,7 @@ export async function dispose(): Promise<void> {
 
 export async function getContacts(groupId: string): Promise<Contact[]> {
     return await exec(async db => {
-        const results = await db.collection("contacts").find({ groupId: new ObjectId(groupId) }).toArray();
+        const results = await db.collection("contacts").find({ groupId: groupId }).toArray();
         return results.map(c => {
             return c as Contact;
         });
@@ -397,14 +397,18 @@ export async function isSlugAvailable(slug: string): Promise<boolean> {
     return existing === null;
 }
 
-export async function generateUniqueSlug(baseSlug: string): Promise<string> {
-    // Normalize slug: lowercase, replace spaces with hyphens, remove special chars
-    let slug = baseSlug
+export function makeSlug(baseSlug: string): string {
+    return baseSlug
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[åä]/g, 'a')
         .replace(/ö/g, 'o')
         .replace(/[^a-z0-9-]/g, '');
+}
+
+export async function generateUniqueSlug(baseSlug: string): Promise<string> {
+    // Normalize slug: lowercase, replace spaces with hyphens, remove special chars
+    let slug = makeSlug(baseSlug);
 
     if (await isSlugAvailable(slug)) {
         return slug;

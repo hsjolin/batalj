@@ -2,7 +2,9 @@ import localforage from "localforage";
 import sortBy from "sort-by";
 
 const baseUri = "/api/v1";
-const host = "http://localhost:3000";
+const host = import.meta.env.DEV 
+    ? "http://localhost:3000"
+    : "";
 
 // ============================================================================
 // Authentication Functions
@@ -132,8 +134,8 @@ export async function getContacts(groupSlug) {
     .filter(contact => contact.groupId === groupSlug);
 }
 
-export async function createContact(groupSlug) {
-  return await create("contact", `/groups/${groupSlug}/contacts`);
+export async function createContact(groupSlug, contact) {
+  return await create("contact", `/groups/${groupSlug}/contacts`, contact);
 }
 
 export async function getContact(id) {
