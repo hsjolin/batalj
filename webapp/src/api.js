@@ -130,8 +130,12 @@ export async function getGroupStatistics(groupSlug) {
 // ============================================================================
 
 export async function getContacts(groupSlug) {
-  return (await get("contact"))
-    .filter(contact => contact.groupId === groupSlug);
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/contacts`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
 export async function createContact(groupSlug, contact) {
@@ -155,12 +159,21 @@ export async function deleteContact(id, groupSlug) {
 // ============================================================================
 
 export async function getCompetitions(groupSlug) {
-  return (await get("competitions"))
-    .filter(competition => competition.groupId === groupSlug);
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/competitions`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function getCompetition(id) {
-  return await getOne("competitions", id);
+export async function getCompetition(groupSlug, competitionId) {
+    const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/competitions/${competitionId}`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
 export async function createCompetition(groupSlug) {
@@ -201,13 +214,22 @@ export async function getCompetitionStatistics(groupSlug, competitionId) {
 // Activity Functions (renamed from Event)
 // ============================================================================
 
-export async function getActivities(competitionId) {
-  return (await get("activities"))
-    .filter(activity => activity.competitionId === competitionId);
+export async function getActivities(groupSlug, competitionId) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/competitions/${competitionId}/activities`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function getActivity(id) {
-  return await getOne("activities", id);
+export async function getActivity(groupSlug, competitionId, activityId) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/competitions/${competitionId}/activities/${activityId}`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
 export async function createActivity(params) {
@@ -233,13 +255,22 @@ export const deleteEvent = deleteActivity;
 // Score/Result Functions
 // ============================================================================
 
-export async function getScores(activityId) {
-  return (await get("score"))
-    .filter(score => score.eventId === activityId);
+export async function getScores(groupSlug, competitionId, activityId) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/competitions/${competitionId}/activities/${activityId}/scores`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
-export async function getScore(id) {
-  return await getOne("score", id);
+export async function getScore(groupSlug, competitionId, activityId, scoreId) {
+  const res = await fetch(`${host}${baseUri}/groups/${groupSlug}/competitions/${competitionId}/activities/${activityId}/scores/${scoreId}`, {
+    credentials: "include",
+  });
+
+  assureResponse(res);
+  return await res.json();
 }
 
 export async function createScore(params, data) {

@@ -44,7 +44,7 @@ export async function dispose(): Promise<void> {
     _client = null;
 }
 
-export async function getContacts(groupId: string): Promise<Contact[]> {
+export async function getContacts(groupId: ObjectId): Promise<Contact[]> {
     return await exec(async db => {
         const results = await db.collection("contacts").find({ groupId: groupId }).toArray();
         return results.map(c => {
@@ -69,7 +69,7 @@ export async function updateContact(id: string, updates: any): Promise<Boolean> 
         if (id.length != 24) {
             return false;
         }
-
+        console.log("Updating contact", id, updates);
         const result = await db.collection("contacts")
             .updateOne(
                 { _id: new ObjectId(id) },

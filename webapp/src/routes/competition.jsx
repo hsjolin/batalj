@@ -21,11 +21,13 @@ import {
 
 export async function loader({ request, params }) {
     const url = new URL(request.url);
-    const q = url.searchParams.get("q");
-    const activities = await getActivities(params.competitionId, q);
-    const contacts = await getContacts(params.groupSlug);
-    const competition = await getCompetition(params.competitionId);
-    const group = await getGroup(params.groupSlug);
+
+    const [activities, contacts, competition, group] = await Promise.all([
+        getActivities(params.groupSlug, params.competitionId),
+        getContacts(params.groupSlug),
+        getCompetition(params.groupSlug, params.competitionId),
+        getGroup(params.groupSlug)
+    ]);
 
     return { activities, contacts, competition, group };
 }

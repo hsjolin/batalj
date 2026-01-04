@@ -17,11 +17,11 @@ import {
 import { useEffect, useState } from "react";
 
 import {
-    getCompetitions,
     createCompetition,
     createContact,
-    getContacts,
     getGroup,
+    getContacts,
+    getCompetitions,
     switchContact,
     sendInvite,
     getCurrentUser
@@ -29,10 +29,15 @@ import {
 
 export async function loader({ request, params }) {
     console.log("Grouprouter");
-    const group = await getGroup(params.groupSlug);
-    const contacts = await getContacts(group._id.toString());
-    const competitions = await getCompetitions(group._id.toString());
-    const currentUser = await getCurrentUser();
+
+    // Fetch directly from API to ensure fresh data
+    const [group, currentUser, contacts, competitions] = await Promise.all([
+        getGroup(params.groupSlug),
+        getCurrentUser(),
+        getContacts(params.groupSlug),
+        getCompetitions(params.groupSlug)
+    ]);
+
     return { contacts, competitions, group, currentUser };
 }
 
@@ -65,7 +70,6 @@ export default function Group() {
     const params = useParams();
 
     const { contacts, competitions, group, currentUser } = useLoaderData();
-    console.log("Group", contacts.length);
 
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState("");

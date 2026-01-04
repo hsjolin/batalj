@@ -18,7 +18,7 @@ export async function action({ request, params }) {
 }
 
 export async function loader({ params }) {
-    const competition = await getCompetition(params.competitionId);
+    const competition = await getCompetition(params.groupSlug, params.competitionId);
     if(competition) {
         return { competition };
     }

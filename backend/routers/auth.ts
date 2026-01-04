@@ -18,7 +18,7 @@ export default function authRouter(): Router {
         }
 
         // Get contacts in group
-        const contacts = await getContacts(group._id!.toString());
+        const contacts = await getContacts(group._id!);
         if (contacts.length === 0) {
             return res.status(400).json({ error: "No contacts in group" });
         }
@@ -72,7 +72,7 @@ export default function authRouter(): Router {
         await markInviteTokenUsed(token);
 
         // Get contacts in the group and set cookie to first one
-        const contacts = await getContacts(tokenData.group._id!.toString());
+        const contacts = await getContacts(tokenData.group._id!);
         if (contacts.length > 0) {
             res.cookie('contactId', contacts[0]._id!.toString(), {
                 httpOnly: true,

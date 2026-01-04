@@ -18,9 +18,12 @@ import { useEffect, useState } from "react";
 import { addWebsocketListener, removeWebsocketListener } from "../websocket";
 
 export async function loader({ params }) {
-  const activity = await getActivity(params.activityId);
-  const contacts = await getContacts(params.groupSlug);
-  const scores = await getScores(params.activityId) ?? [];
+  // Fetch activity, contacts, and scores from API
+  const [activity, contacts, scores] = await Promise.all([
+    getActivity(params.groupSlug, params.competitionId, params.activityId),
+    getContacts(params.groupSlug),
+    getScores(params.groupSlug, params.competitionId, params.activityId)
+  ]);
 
   if (!activity || !contacts) {
     throw new Response("Aktiviteten hittades inte", {
@@ -76,6 +79,9 @@ export default function Activity() {
   const revalidator = useRevalidator();
 
   useEffect(() => {
+    // Revalidate when switching activities
+    revalidator.revalidate();
+
     const listenerRef = addWebsocketListener(params.groupSlug,
       async evnt => {
         if (evnt.type === "message" && (
@@ -90,7 +96,7 @@ export default function Activity() {
     return () => {
       removeWebsocketListener(listenerRef);
     };
-  }, []);
+  }, [params.activityId]);
 
   return (
     <div id="activity">
@@ -188,6 +194,13 @@ function ContactResult({ contact, activityType }) {
   const [result, setResult] = useState(contact.result ?? "");
   const [time1, setTime1] = useState(contact.time1 ?? "");
   const [time2, setTime2] = useState(contact.time2 ?? "");
+
+  // Update state when contact data changes (e.g., when switching activities)
+  useEffect(() => {
+    setResult(contact.result ?? "");
+    setTime1(contact.time1 ?? "");
+    setTime2(contact.time2 ?? "");
+  }, [contact.result, contact.time1, contact.time2]);
 
   const isTimeMatching = activityType === "TIME_MATCHING";
 

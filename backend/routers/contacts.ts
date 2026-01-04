@@ -11,15 +11,15 @@ export default function contactsRouter(): Router {
     const router = Router();
     router
         .get("/", async (req, res, _) => {
-            const contacts = await getContacts(getGroup(req)._id?.toString()!);
+            const contacts = await getContacts(getGroup(req)._id!);
             res.json(contacts);
         })
         .post("/", async (req, res, _) => {
             const contact = await createContact({
-                groupId: getGroup(req)._id,
-                ...req.body
+                ...req.body,
+                groupId: getGroup(req)._id
             });
-
+            console.log("Created contact", contact, req.body);
             res.json(contact);
         })
         .use("/:contactId", async (req, res, next) => {
